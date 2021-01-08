@@ -1,4 +1,4 @@
-package com.dungle.getlocationsample.serivce
+package com.dungle.getlocationsample.service
 
 import android.app.*
 import android.content.Context
@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
@@ -21,9 +22,6 @@ import java.util.*
  * Service tracks location when requested and updates Activity via binding. If Activity is
  * stopped/unbinds and tracking is enabled, the service promotes itself to a foreground service to
  * insure location updates aren't interrupted.
- *
- * For apps running in the background on O+ devices, location is computed much less than previous
- * versions. Please reference documentation for details.
  */
 class LocationUpdatesService : Service() {
 
@@ -54,7 +52,7 @@ class LocationUpdatesService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand()")
-        if (intent?.extras?.getBoolean(EXTRA_START_SERVICE) == true) {
+        if (intent?.extras?.getBoolean(LOCATION_BACKGROUND_SERVICE_UPDATE) == true) {
             startForeGround()
             startTrackingLocation()
         }
@@ -195,7 +193,11 @@ class LocationUpdatesService : Service() {
 
     private fun trackNewLocation(location: Location) {
         currentLocation = location
-
+        Toast.makeText(
+            applicationContext,
+            "${location.latitude} - ${location.longitude}",
+            Toast.LENGTH_SHORT
+        ).show()
     }
     /**
      * Class used for the client Binder.  Since this service runs in the same process as its
@@ -206,10 +208,7 @@ class LocationUpdatesService : Service() {
     }
 
     companion object {
-
-        private const val PACKAGE_NAME = "com.deliveree.driver.service"
-
-        const val EXTRA_START_SERVICE = "$PACKAGE_NAME.extra.START_SERVICE"
+        const val LOCATION_BACKGROUND_SERVICE_UPDATE = "LOCATION_BACKGROUND_SERVICE_UPDATE"
 
         private const val TAG = "LocationService"
     }

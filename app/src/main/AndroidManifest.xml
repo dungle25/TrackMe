@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.dungle.getlocationsample">
-    <!-- dùng để lấy location trong foreground -->
+
     <!-- To request foreground location access, declare one of these permissions. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> <!-- dùng để lấy location trong background -->
-    <!--
- Required only when requesting background location access on
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!--Required only when requesting background location access on
          Android 10 (API level 29) and higher.
     -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
@@ -25,6 +25,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".service.LocationUpdatesService"
+            android:enabled="true"
+            android:exported="true" />
     </application>
-
 </manifest>

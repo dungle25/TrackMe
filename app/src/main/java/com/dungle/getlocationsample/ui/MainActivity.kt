@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Looper
@@ -17,7 +18,7 @@ import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
-import com.dungle.getlocationsample.serivce.LocationUpdatesService
+import com.dungle.getlocationsample.service.LocationUpdatesService
 import com.dungle.getlocationsample.util.Util
 import com.google.android.gms.location.*
 import kotlinx.android.synthetic.main.activity_main.*
@@ -144,6 +145,14 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             && Util.checkAccessLocationBackgroundGranted(this)
         ) {
             locationUpdatesService?.startTrackingLocation()
+        } else {
+            val intent = Intent(this@MainActivity, LocationUpdatesService::class.java)
+            intent.putExtra(LocationUpdatesService.LOCATION_BACKGROUND_SERVICE_UPDATE, true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
         }
     }
 
