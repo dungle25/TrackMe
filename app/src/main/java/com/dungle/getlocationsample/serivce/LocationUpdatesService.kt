@@ -112,7 +112,7 @@ class LocationUpdatesService : Service() {
         Log.d(TAG, "startTrackingLocation()")
         isTracking = true
 /*
-        LocationUpdateUtils.requestLocationUpdates(this, true)
+        LocationUpdateUtils.requestLocationUpdates(this, true) //TODO store running state
 */
 
         // Binding to this service doesn't actually trigger onStartCommand(). That is needed to

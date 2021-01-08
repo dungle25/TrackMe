@@ -2,9 +2,14 @@ package com.dungle.getlocationsample.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
+import android.os.IBinder
 import android.os.Looper
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +17,8 @@ import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
+import com.dungle.getlocationsample.serivce.LocationUpdatesService
+import com.dungle.getlocationsample.util.Util
 import com.google.android.gms.location.*
 import kotlinx.android.synthetic.main.activity_main.*
 import pub.devrel.easypermissions.EasyPermissions
@@ -22,11 +29,31 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private lateinit var locationCallback: LocationCallback
     private lateinit var adapter: SessionAdapter
     private val locationData: MutableList<Location> = arrayListOf()
-
     private val locationPerms = arrayOf(
         Manifest.permission.ACCESS_COARSE_LOCATION,
         Manifest.permission.ACCESS_FINE_LOCATION
     )
+
+    // A reference to the service used to get location updates.
+    private var locationUpdatesService: LocationUpdatesService? = null
+
+    // Tracks the bound state of the service.
+    private var bound = false
+
+    // Monitors the state of the connection to the service.
+    private val serviceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder = service as LocationUpdatesService.LocalBinder
+            locationUpdatesService = binder.getService()
+            bound = true
+            startTrackingLocation()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            locationUpdatesService = null
+            bound = false
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,21 +63,28 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         addClickEvents()
     }
 
-    private fun initSessionAdapter() {
-        adapter = SessionAdapter()
-        adapter.data = locationData
-        rcvLocation?.adapter = adapter
-        rcvLocation?.layoutManager = LinearLayoutManager(this)
-    }
-
     override fun onStart() {
         super.onStart()
         verifyPermissions()
+        bindLocationUpdateService()
     }
 
     override fun onPause() {
         super.onPause()
         stopLocationUpdates()
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        unbindLocationUpdateService()
+    }
+
+    private fun unbindLocationUpdateService() {
+        if (bound) {
+            unbindService(serviceConnection)
+            bound = false
+        }
     }
 
     private fun stopLocationUpdates() {
@@ -86,6 +120,30 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     Manifest.permission.ACCESS_BACKGROUND_LOCATION
                 )
             }
+        }
+    }
+
+    private fun initSessionAdapter() {
+        adapter = SessionAdapter()
+        adapter.data = locationData
+        rcvLocation?.adapter = adapter
+        rcvLocation?.layoutManager = LinearLayoutManager(this)
+    }
+
+    private fun bindLocationUpdateService() {
+        bindService(
+            Intent(this, LocationUpdatesService::class.java),
+            serviceConnection,
+            Context.BIND_AUTO_CREATE
+        )
+    }
+
+    private fun startTrackingLocation() {
+        if (locationUpdatesService != null
+            && Util.checkFineLocationGranted(this)
+            && Util.checkAccessLocationBackgroundGranted(this)
+        ) {
+            locationUpdatesService?.startTrackingLocation()
         }
     }
 
@@ -168,7 +226,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         } else {
             fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
                 location?.let {
-                    startLocationUpdates()
+//                    startLocationUpdates() //TODO
+                    startTrackingLocation()
                 }
             }
         }
