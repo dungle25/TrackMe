@@ -7,9 +7,11 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Looper
 import androidx.core.app.ActivityCompat
+import com.dungle.getlocationsample.Constant
+import com.dungle.getlocationsample.model.BaseEvent
 import com.google.android.gms.location.*
+import org.greenrobot.eventbus.EventBus
 import pub.devrel.easypermissions.EasyPermissions
-import java.util.concurrent.TimeUnit
 
 class LocationHelper(private val context: Context) {
 
@@ -53,13 +55,13 @@ class LocationHelper(private val context: Context) {
          * The desired interval for location updates. Inexact. Updates may be
          * more or less frequent.
          */
-        val UPDATE_INTERVAL_IN_MILLISECONDS: Long = TimeUnit.SECONDS.toMillis(10)
+        const val UPDATE_INTERVAL_IN_MILLISECONDS = 1000L
 
         /*
          * The fastest rate for active location updates. Updates will never be
          * more frequent than this value.
          */
-        val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = UPDATE_INTERVAL_IN_MILLISECONDS / 2
+        const val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 500L
 
         /*
          * Minimum distance to update
@@ -107,47 +109,13 @@ class LocationHelper(private val context: Context) {
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
     }
 
-    fun getLastKnownLocation(listener: LocationHelperListener) {
-        if (hasPermission()) {
-            if (ActivityCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return
-            }
-            val task = fusedLocationProviderClient.lastLocation
-            task.addOnSuccessListener { location ->
-                if (location != null && isValidLocation(context, location)) {
-                    listener.onNewLocation(location)
-                } else if (location != null) {
-                    listener.onDetectFakeLocation(location)
-                } else {
-                    listener.onNewLocation(null)
-                }
-            }
-            task.addOnFailureListener {
-                listener.onFailed(it)
-            }
-        } else {
-            listener.onRequestPermission()
-        }
-    }
-
     private fun isValidLocation(context: Context, location: Location): Boolean {
-//        return if (OutputUtil.checkMockLocation(context, location)
-//                && TextUtils.isEmpty(DelivereeGlobal.getMockLocationPassCode(context))) {
-//            // DLVR-10983: listen push from location service, then check if this is mock location
-//            val event = BaseEvent(EventBusConstants.EVENT_FAKE_LOCATION_DETECTED, location)
-//            EventBus.getDefault().post(event)
-//            FirebaseAnalyticsHelper.trackingErrorEvent(FirebaseAnalyticsConstants.ERR_LOCATION_INVALID)
-//            false
-//        } else {
-        return true
-//        }
+        return if (Util.checkMockLocation(context, location)) {
+            EventBus.getDefault().post(BaseEvent(Constant.EVENT_FAKE_LOCATION_DETECTED, location))
+            false
+        } else {
+            return true
+        }
     }
 
     private fun hasPermission(): Boolean {
@@ -155,11 +123,9 @@ class LocationHelper(private val context: Context) {
     }
 
     interface LocationHelperListener {
-        fun onRequestPermission() {}
+        fun onRequestPermission()
 
-        fun onFailed(e: Exception) {}
-
-        fun onDetectFakeLocation(location: Location) {}
+        fun onDetectFakeLocation(location: Location)
 
         fun onNewLocation(location: Location?)
     }
