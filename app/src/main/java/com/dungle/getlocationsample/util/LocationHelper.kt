@@ -82,6 +82,7 @@ class LocationHelper(private val context: Context) {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun startLocationUpdate() {
         if (hasPermission()) {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback)

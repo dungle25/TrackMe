@@ -2,7 +2,6 @@ package com.dungle.getlocationsample.ui.history
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
@@ -17,20 +17,13 @@ import com.dungle.getlocationsample.Status
 import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.ui.SessionAdapter
 import com.dungle.getlocationsample.ui.viewmodel.SessionViewModel
-import com.dungle.getlocationsample.util.LocationHelper
-import com.dungle.getlocationsample.util.LocationUpdateUtils
-import com.dungle.getlocationsample.util.Util
 import kotlinx.android.synthetic.main.history_fragment.*
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import pub.devrel.easypermissions.EasyPermissions
 
 class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
-    private val viewModel: SessionViewModel by inject()
+    private val viewModel: SessionViewModel by viewModel()
     private lateinit var adapter: SessionAdapter
-    private lateinit var locationHelper: LocationHelper
-    private var currentSessionCount: Int = 0
     private val locationData: MutableList<Session> = arrayListOf()
     private val locationPerms = arrayOf(
         Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -40,10 +33,6 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
         Manifest.permission.WRITE_EXTERNAL_STORAGE,
         Manifest.permission.READ_EXTERNAL_STORAGE
     )
-
-    companion object {
-        fun newInstance() = HistoryFragment()
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -55,24 +44,17 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initSessionAdapter()
-        initLocationHelper()
         addClickEvents()
         observerDataChanged()
     }
 
-    override fun onStart() {
-        super.onStart()
-        EventBus.getDefault().register(this)
-    }
-
     override fun onResume() {
         super.onResume()
-        viewModel.getSessionCount()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        EventBus.getDefault().unregister(this)
+        if (locationData.isNotEmpty()) {
+            showHistoryList()
+        } else {
+            hideHistoryList()
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -108,26 +90,30 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     }
 
     private fun observerDataChanged() {
-        viewModel.sessionCount.observe(viewLifecycleOwner, { dataResult ->
-            handleDataResult(dataResult.status, {
-                dataResult.data?.let {
-                    if (it > 0) {
-                        currentSessionCount = it
-                        viewModel.getAllSessionHistory()
-                    } else {
-                        showNoHistoryDataMessage()
-                    }
-                }
-            }, { showError(dataResult.message) })
-        })
-
         viewModel.sessionHistoryData.observe(viewLifecycleOwner, { dataResult ->
             handleDataResult(dataResult.status, {
-                dataResult.data?.let {
-                    loadDataToList(it)
-                }
+                onHistoryDataObserved(dataResult.data)
             }, { showError(dataResult.message) })
         })
+    }
+
+    private fun onHistoryDataObserved(data: List<Session>?) {
+        if (data != null && data.isNotEmpty()) {
+            loadDataToList(data)
+            showHistoryList()
+        } else {
+            hideHistoryList()
+        }
+    }
+
+    private fun hideHistoryList() {
+        rcvLocation?.visibility = View.GONE
+        tvNoHistory?.visibility = View.VISIBLE
+    }
+
+    private fun showHistoryList() {
+        rcvLocation?.visibility = View.VISIBLE
+        tvNoHistory?.visibility = View.GONE
     }
 
     private fun loadDataToList(it: List<Session>) {
@@ -158,20 +144,16 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
         }
     }
 
-    private fun showNoHistoryDataMessage() {
-        // TODO
-    }
-
     private fun showError(message: String?) {
 
     }
 
     private fun showLoading() {
-
+        progressLoading?.visibility = View.VISIBLE
     }
 
     private fun hideLoading() {
-
+        progressLoading?.visibility = View.GONE
     }
 
     private fun initSessionAdapter() {
@@ -184,26 +166,6 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
                 LinearLayoutManager.VERTICAL,
                 false
             )
-        }
-    }
-
-    private fun startTrackingLocation() {
-        context?.let {
-            if (Util.checkFineLocationGranted(it)
-                && Util.checkAccessLocationBackgroundGranted(it)
-            ) {
-                navigateToRecord()
-            }
-        }
-    }
-
-    private fun navigateToRecord() {
-        //TODO navigate to record screen
-    }
-
-    private fun initLocationHelper() {
-        context?.let {
-            locationHelper = LocationHelper(it)
         }
     }
 
@@ -254,16 +216,12 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     }
 
     private fun addClickEvents() {
-        btnStart?.setOnClickListener {
-            updateLocations()
-        }
-
-        btnPause?.setOnClickListener {
-
+        btnRecord?.setOnClickListener {
+            checkPermissionAndGoToRecordScreen()
         }
     }
 
-    private fun updateLocations() {
+    private fun checkPermissionAndGoToRecordScreen() {
         context?.let {
             if (ActivityCompat.checkSelfPermission(
                     it,
@@ -284,15 +242,8 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
             ) {
                 verifyPermissions()
             } else {
-                startTrackingLocation()
+                findNavController().navigate(HistoryFragmentDirections.actionHistoryFragmentToRecordFragment())
             }
         }
-    }
-
-    @Subscribe
-    fun trackNewLocation(location: Location) {
-        //TODO replace event bus in service
-//        locationData.add(location)
-//        adapter.notifyDataSetChanged()
     }
 }

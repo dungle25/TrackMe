@@ -22,20 +22,16 @@ import org.koin.android.ext.android.inject
 class LocationTrackerService : Service() {
 
     private val database : AppDatabase by inject()
+    private var currentSessionId : Int = -1
     private lateinit var locationRequest: LocationRequest
     private val locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult?) {
             super.onLocationResult(locationResult)
             locationResult?.lastLocation?.let {
-//                EventBus.getDefault().post(it)
                 saveToLocal(it)
             }
         }
 
-    }
-
-    private fun saveToLocal(location: Location) {
-        TODO("Not yet implemented")
     }
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -64,6 +60,9 @@ class LocationTrackerService : Service() {
             locationCallback,
             Looper.getMainLooper()
         )
+    }
+
+    private fun saveToLocal(location: Location) {
     }
 
     private fun prepareForegroundNotification() {

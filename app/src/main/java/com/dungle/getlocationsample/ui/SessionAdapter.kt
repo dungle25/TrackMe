@@ -36,9 +36,6 @@ class SessionAdapter(private val data: List<Session>) :
         var map: MapView? = null
         fun bind(session: Session) {
             initMap(containerView)
-//            currentLocation = session.
-//            val text = "${location.latitude} - ${location.longitude}"
-//            tvLocation.text = text
         }
 
         private fun initMap(containerView: View) {

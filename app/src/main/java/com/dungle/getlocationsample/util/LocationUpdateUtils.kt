@@ -101,5 +101,9 @@ class LocationUpdateUtils {
                 )
             }
         }
+
+        fun pauseTrackingLocation() {
+
+        }
     }
 }
