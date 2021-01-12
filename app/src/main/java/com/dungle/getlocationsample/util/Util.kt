@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import com.dungle.getlocationsample.Status
+import kotlin.math.*
 
 class Util {
     companion object {
@@ -82,8 +83,34 @@ class Util {
             }
         }
 
-        fun showMessage(context : Context, message: String) {
+        fun showMessage(context: Context, message: String) {
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
+
+        fun calculateDistance(
+            lat1: Double,
+            lng1: Double,
+            lat2: Double,
+            lng2: Double
+        ): Double {
+            val dLat = Math.toRadians(lat2 - lat1)
+            val dLon = Math.toRadians(lng2 - lng1)
+            val a = (sin(dLat / 2) * sin(dLat / 2)
+                    + (cos(Math.toRadians(lat1))
+                    * cos(Math.toRadians(lat2)) * sin(dLon / 2)
+                    * sin(dLon / 2)))
+            return 2 * asin(sqrt(a))
+        }
+
+        fun calculateSpeed(
+            startLocation: Location,
+            currentLocation: Location
+        ): Double {
+            return sqrt(
+                (currentLocation.longitude - startLocation.longitude).pow(2)
+                        + (currentLocation.latitude - startLocation.latitude).pow(2)
+            ) / (currentLocation.time - startLocation.time)
+        }
+
     }
 }

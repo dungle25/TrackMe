@@ -3,7 +3,6 @@ package com.dungle.getlocationsample.ui.record
 import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -41,10 +40,10 @@ class RecordFragment : Fragment() {
     private var googleMap: GoogleMap? = null
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
-    private var currentLatLng: LatLng? = null
     private var isCameraMoved = false
     private var currentInProgressSession: Session? = null
     private var currentInProgressSessionId: Int = -1
+    private val testss: MutableList<LatLng> = arrayListOf()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -123,23 +122,34 @@ class RecordFragment : Fragment() {
 
     private fun initClickEvents() {
         ivPause?.setOnClickListener {
-            showResumeAndStopButton()
-            viewModel.getCurrentInProgressSession(currentInProgressSessionId)
-            stopLocationUpdates()
+            pauseTracking()
         }
 
         ivResume?.setOnClickListener {
-            showPauseButton()
-            startTrackingLocation()
+            resumeTracking()
         }
 
         ivStop?.setOnClickListener {
-            showPauseButton()
-            currentInProgressSession?.let {
-                viewModel.saveSession(it)
-            }
-            stopLocationUpdates()
+            stopTracking()
         }
+    }
+
+    private fun stopTracking() {
+        stopLocationUpdates()
+        showPauseButton()
+        currentInProgressSession?.let {
+            viewModel.saveSession(it)
+        }
+    }
+
+    private fun pauseTracking() {
+        showResumeAndStopButton()
+        stopLocationUpdates()
+    }
+
+    private fun resumeTracking() {
+        showPauseButton()
+        startTrackingLocation()
     }
 
     private fun showPauseButton() {
@@ -168,14 +178,13 @@ class RecordFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         EventBus.getDefault().register(this)
-        getLastKnownLocation()
     }
 
     override fun onResume() {
         super.onResume()
-        activity?.let {
-            LocationUpdateUtils.startTrackingLocationService(it, 0)
-        }
+//        if (LocationUpdateUtils.isRequestingLocationUpdates(requireContext())) {
+//            resumeTracking()
+//        }
     }
 
     override fun onStop() {
@@ -186,16 +195,50 @@ class RecordFragment : Fragment() {
     @Subscribe
     fun onLocationUpdate(session: Session) {
         currentInProgressSession = session
-        Log.e("juju", "fragment: ${currentInProgressSession?.locations?.size}")
         currentInProgressSession?.locations?.let {
+
+            val startLocation = it[0]
+            val startLocationLatLng = LatLng(startLocation.latitude, startLocation.longitude)
+
+            if (it.size > 1) {
+                val currentLocation = it[it.size - 1]
+                val currentLocationLatLng =
+                    LatLng(currentLocation.latitude, currentLocation.longitude)
+                setDistance(startLocationLatLng, currentLocationLatLng)
+                setSpeed(startLocation, currentLocation)
+                addMarker(startLocationLatLng, currentLocationLatLng)
+            } else {
+                addMarker(startLocationLatLng, null)
+            }
+
             val latLngData = convertToLatLngList(it)
             onDrawPathWithPoint(latLngData)
             boundMapWithListLatLng(latLngData)
         }
     }
 
+    private fun setSpeed(startLocation: Location, currentLocation: Location) {
+        currentInProgressSession?.speeds?.add(
+            Util.calculateSpeed(
+                startLocation, currentLocation
+            )
+        )
+    }
+
+    private fun setDistance(
+        startLocation: LatLng,
+        currentLocationLatLng: LatLng
+    ) {
+        currentInProgressSession?.distance = Util.calculateDistance(
+            startLocation.latitude,
+            startLocation.longitude,
+            currentLocationLatLng.longitude,
+            currentLocationLatLng.longitude
+        )
+    }
+
     private fun convertToLatLngList(locations: MutableList<Location>): List<LatLng> {
-        val latLngData : MutableList<LatLng> = arrayListOf()
+        val latLngData: MutableList<LatLng> = arrayListOf()
         locations.forEach {
             latLngData.add(LatLng(it.latitude, it.longitude))
         }
@@ -239,32 +282,8 @@ class RecordFragment : Fragment() {
             if (currentInProgressSession == null) {
                 currentInProgressSession = Session()
             }
-            LocationUpdateUtils.startTrackingLocationService(it, currentInProgressSessionId)
+            LocationUpdateUtils.startTrackingLocationService(it, currentInProgressSession!!)
         }
-    }
-
-    @SuppressLint("MissingPermission")
-    fun getLastKnownLocation() {
-        val task = fusedLocationProviderClient.lastLocation
-        task.addOnSuccessListener { location ->
-            if (location != null) {
-                currentLatLng = LatLng(location.latitude, location.longitude)
-                moveMapAndSetStartMarker(
-                    LatLng(location.latitude, location.longitude)
-                )
-            }
-        }
-    }
-
-    val testss: MutableList<LatLng> = arrayListOf()
-    private fun moveMapAndSetStartMarker(location: LatLng) {
-        mockLocations()
-        startMarker = getMarker(location, "Start point", R.layout.layout_start_marker)
-        googleMap?.moveCamera(
-            CameraUpdateFactory.newLatLng(
-                location
-            )
-        )
     }
 
     private fun getMarker(latLng: LatLng, title: String, markerLayout: Int) = googleMap?.addMarker(
@@ -280,7 +299,6 @@ class RecordFragment : Fragment() {
     )
 
     private fun mockLocations() {
-        testss.add(currentLatLng!!)
         testss.add(LatLng(10.796962, 106.659363))
         testss.add(LatLng(10.796709, 106.659523))
         testss.add(LatLng(10.796524, 106.659631))
@@ -303,8 +321,6 @@ class RecordFragment : Fragment() {
     }
 
     private fun onDrawPathWithPoint(points: List<LatLng>) {
-        val currentLocationLatLng =
-            LatLng(points[points.size - 1].latitude, points[points.size - 1].longitude)
         val polyLineOptions = PolylineOptions()
         polyLineOptions.addAll(points)
             .width(
@@ -315,14 +331,30 @@ class RecordFragment : Fragment() {
             )
             .color(ContextCompat.getColor(requireContext(), R.color.orange))
         googleMap?.addPolyline(polyLineOptions)
-        if (endMarker == null) {
-            endMarker = getMarker(
-                currentLocationLatLng,
-                "Current position",
-                R.layout.layout_end_marker
+    }
+
+    private fun addMarker(
+        startLocation: LatLng,
+        currentLocationLatLng: LatLng?
+    ) {
+        if (startMarker == null) {
+            startMarker = getMarker(
+                startLocation,
+                "Start position",
+                R.layout.layout_start_marker
             )
-        } else {
-            endMarker?.position = currentLocationLatLng
+        }
+
+        currentLocationLatLng?.let {
+            if (endMarker == null) {
+                endMarker = getMarker(
+                    it,
+                    "Current position",
+                    R.layout.layout_end_marker
+                )
+            } else {
+                endMarker?.position = it
+            }
         }
     }
 

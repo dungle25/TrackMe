@@ -5,11 +5,13 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
 import android.preference.PreferenceManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
+import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.service.LocationTrackerService
 import pub.devrel.easypermissions.EasyPermissions
 
@@ -40,7 +42,7 @@ class LocationUpdateUtils {
             }
         }
 
-        fun startTrackingLocationService(activity: Activity, sessionId : Int) {
+        fun startTrackingLocationService(activity: Activity, session : Session) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 if (EasyPermissions.hasPermissions(
                         activity,
@@ -52,7 +54,7 @@ class LocationUpdateUtils {
                             Manifest.permission.ACCESS_BACKGROUND_LOCATION
                         )
                     ) {
-                        checkFineLocationThenStartTracking(activity, sessionId)
+                        checkFineLocationThenStartTracking(activity, session)
                     } else {
                         activity.requestPermissions(
                             arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
@@ -69,15 +71,17 @@ class LocationUpdateUtils {
                     )
                 }
             } else {
-                checkFineLocationThenStartTracking(activity, sessionId)
+                checkFineLocationThenStartTracking(activity, session)
             }
         }
 
-        private fun checkFineLocationThenStartTracking(context: Activity, sessionId : Int) {
+        private fun checkFineLocationThenStartTracking(context: Activity, session : Session) {
             if (EasyPermissions.hasPermissions(context, Manifest.permission.ACCESS_FINE_LOCATION)) {
                 requestLocationUpdates(context, true)
                 val intent = Intent(context, LocationTrackerService::class.java)
-                intent.putExtra(Constant.CURRENT_SESSION_ID, sessionId)
+                val bundle = Bundle()
+                bundle.putParcelable(Constant.CURRENT_SESSION, session)
+                intent.putExtras(bundle)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(intent)
                 } else {

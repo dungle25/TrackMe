@@ -2,7 +2,7 @@ package com.dungle.getlocationsample
 
 class Constant {
     companion object {
-        const val CURRENT_SESSION_ID = "CURRENT_SESSION_ID"
+        const val CURRENT_SESSION = "CURRENT_SESSION"
         const val ZOOM_LEVEL_OVER = 1f
         const val REQUEST_INTERVAL = 5000L
         const val FASTEST_REQUEST_INTERVAL = 2500L

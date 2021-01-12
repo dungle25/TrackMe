@@ -1,10 +1,13 @@
 package com.dungle.getlocationsample.service
 
 import android.annotation.SuppressLint
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
 import android.content.Intent
-import android.location.Location
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
@@ -14,6 +17,7 @@ import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
 import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.ui.main.MainActivity
+import com.dungle.getlocationsample.util.StopwatchHelper
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -22,21 +26,28 @@ import org.greenrobot.eventbus.EventBus
 
 class LocationTrackerService : Service() {
 
-    private val session : Session = Session()
-    private val locations: MutableList<Location> = arrayListOf()
+    private var session: Session? = null
+    private var handler = Handler(Looper.getMainLooper())
     private lateinit var locationRequest: LocationRequest
     private val locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult?) {
             super.onLocationResult(locationResult)
             locationResult?.lastLocation?.let {
-                locations.add(it)
-                session.locations = locations
-                Log.e("juju", "service: ${locations.size}")
+                session?.locations?.add(it)
+                Log.e("juju", "service: ${session?.locations?.size}")
                 EventBus.getDefault().post(session)
             }
         }
-
     }
+
+    var runnable: Runnable = object : Runnable {
+        override fun run() {
+            session?.totalTimeInMillis = StopwatchHelper.toString()
+            Log.e("juju", "service: $StopwatchHelper")
+            handler.postDelayed(this, 1000)
+        }
+    }
+
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
@@ -52,9 +63,34 @@ class LocationTrackerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        session = if (intent?.extras != null) {
+            intent.extras!!.getParcelable(Constant.CURRENT_SESSION)
+        } else {
+            Session()
+        }
+
+        if (session != null) {
+            StopwatchHelper.startTime = session!!.startTime
+            StopwatchHelper.currentTime = session!!.endTime
+            StopwatchHelper.resume()
+        } else {
+            StopwatchHelper.start()
+        }
+
+        handler.postDelayed(runnable, 1000)
+
         prepareForegroundNotification()
         startLocationUpdates()
         return START_STICKY
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacksAndMessages(null)
+        StopwatchHelper.pause()
+        session?.startTime = StopwatchHelper.startTime
+        session?.endTime = StopwatchHelper.currentTime
+        fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
     @SuppressLint("MissingPermission")
@@ -107,13 +143,5 @@ class LocationTrackerService : Service() {
         locationRequest.interval = Constant.REQUEST_INTERVAL
         locationRequest.fastestInterval = Constant.FASTEST_REQUEST_INTERVAL
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-    }
-    override fun onDestroy() {
-        super.onDestroy()
-        fusedLocationClient.removeLocationUpdates(locationCallback)
-    }
-
-    companion object {
-        private const val TAG = "LocationService"
     }
 }

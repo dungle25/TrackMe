@@ -11,12 +11,12 @@ data class LocalSession(
     @PrimaryKey
     @ColumnInfo(name = "id") val id: Int = 0,
     @ColumnInfo(name = "locations") val locations: MutableList<Location> = arrayListOf(),
-    @ColumnInfo(name = "currentSpeed") val currentSpeed: Double = 0.0,
-    @ColumnInfo(name = "averageSpeed") val avgSpeed: List<Double> = listOf(),
+    @ColumnInfo(name = "currentSpeed") val displaySpeed: Double = 0.0,
+    @ColumnInfo(name = "averageSpeed") val speeds: MutableList<Double> = arrayListOf(),
     @ColumnInfo(name = "distance") val distance: Double = 0.0,
-    @ColumnInfo(name = "time") val totalTimeInMillis: Long = 0L
+    @ColumnInfo(name = "time") val totalTimeInMillis: String = ""
 ) {
-    fun toSession() : Session {
-        return Session(locations, currentSpeed, avgSpeed, distance, totalTimeInMillis)
+    fun toSession(): Session {
+        return Session(locations, displaySpeed, speeds, distance, totalTimeInMillis)
     }
 }
