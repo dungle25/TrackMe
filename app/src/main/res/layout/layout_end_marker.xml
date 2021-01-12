@@ -3,8 +3,8 @@
     android:layout_width="match_parent" android:layout_height="match_parent">
 
     <ImageView
-        android:layout_width="25dp"
-        android:layout_height="25dp"
-        android:src="@drawable/ic_start_location"
+        android:layout_width="23dp"
+        android:layout_height="23dp"
+        android:src="@drawable/ic_current_location"
         android:contentDescription="@string/app_name" />
 </FrameLayout>

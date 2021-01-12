@@ -69,21 +69,21 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="30dp"
         android:orientation="horizontal"
-        app:constraint_referenced_ids="ibPause, ibResume, ibStop"
+        app:constraint_referenced_ids="ivPause, ivResume, ivStop"
         app:flow_wrapMode="aligned"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
     <ImageView
-        android:id="@+id/ibPause"
+        android:id="@+id/ivPause"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:contentDescription="@string/app_name"
         android:src="@drawable/ic_pause" />
 
     <ImageView
-        android:id="@+id/ibResume"
+        android:id="@+id/ivResume"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:contentDescription="@string/app_name"
@@ -91,10 +91,20 @@
         android:visibility="gone" />
 
     <ImageView
-        android:id="@+id/ibStop"
+        android:id="@+id/ivStop"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:contentDescription="@string/app_name"
         android:src="@drawable/ic_stop"
         android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/progressLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

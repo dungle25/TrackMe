@@ -2,12 +2,23 @@ package com.dungle.getlocationsample.model
 
 import android.location.Location
 import androidx.room.Entity
+import com.dungle.getlocationsample.data.session.local.model.LocalSession
 
-open class Session(
-//    private val locationMap: Map<Int, List<Location>> = emptyMap(), // Mỗi lượt chạy có thể pause & resume, nên xài map -> khi pause & resume sẽ tăng key lên 1
-    private val locations : List<Location> =  listOf(),
+data class Session(
+    var locations: MutableList<Location> = arrayListOf(),
     private val currentSpeed: Double = 0.0,
     private val avgSpeed: List<Double> = listOf(),
     private val distance: Double = 0.0,
     private val totalTimeInMillis: Long = 0L
-)
+) {
+    fun toLocalSession(id: Int): LocalSession {
+        return LocalSession(
+            id = id,
+            locations = locations,
+            currentSpeed = currentSpeed,
+            avgSpeed = avgSpeed,
+            distance = distance,
+            totalTimeInMillis = totalTimeInMillis
+        )
+    }
+}

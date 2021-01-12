@@ -1,7 +1,7 @@
-package com.dungle.getlocationsample.data.local
+package com.dungle.getlocationsample.data.session.local
 
 import androidx.room.*
-import com.dungle.getlocationsample.data.local.model.LocalSession
+import com.dungle.getlocationsample.data.session.local.model.LocalSession
 
 @Dao
 interface SessionDao {

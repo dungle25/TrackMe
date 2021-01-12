@@ -4,8 +4,9 @@ class Constant {
     companion object {
         const val CURRENT_SESSION_ID = "CURRENT_SESSION_ID"
         const val ZOOM_LEVEL_OVER = 1f
-        const val REQUEST_INTERVAL = 10000L
-        const val FASTEST_REQUEST_INTERVAL = 5000L        /*
+        const val REQUEST_INTERVAL = 5000L
+        const val FASTEST_REQUEST_INTERVAL = 2500L
+        /*
          * Minimum distance to update
          */
         const val SMALLEST_DISPLACEMENT = 5.0F

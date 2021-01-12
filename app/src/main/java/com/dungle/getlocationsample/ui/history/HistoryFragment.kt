@@ -13,16 +13,16 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
-import com.dungle.getlocationsample.Status
 import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.ui.SessionAdapter
 import com.dungle.getlocationsample.ui.viewmodel.SessionViewModel
+import com.dungle.getlocationsample.util.Util
 import kotlinx.android.synthetic.main.history_fragment.*
-import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import pub.devrel.easypermissions.EasyPermissions
 
 class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
-    private val viewModel: SessionViewModel by viewModel()
+    private val viewModel: SessionViewModel by sharedViewModel()
     private lateinit var adapter: SessionAdapter
     private val locationData: MutableList<Session> = arrayListOf()
     private val locationPerms = arrayOf(
@@ -48,13 +48,9 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
         observerDataChanged()
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (locationData.isNotEmpty()) {
-            showHistoryList()
-        } else {
-            hideHistoryList()
-        }
+    override fun onStart() {
+        super.onStart()
+        viewModel.getAllSessionHistory()
     }
 
     override fun onRequestPermissionsResult(
@@ -91,17 +87,21 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
 
     private fun observerDataChanged() {
         viewModel.sessionHistoryData.observe(viewLifecycleOwner, { dataResult ->
-            handleDataResult(dataResult.status, {
-                onHistoryDataObserved(dataResult.data)
-            }, { showError(dataResult.message) })
+            Util.handleDataResult(dataResult.status,
+                { onHistoryDataObserved(dataResult.data) },
+                { showError(dataResult.message) },
+                { hideLoading() },
+                { showLoading() })
         })
     }
 
     private fun onHistoryDataObserved(data: List<Session>?) {
         if (data != null && data.isNotEmpty()) {
+            viewModel.setCurrentSessionId(data.size - 1)
             loadDataToList(data)
             showHistoryList()
         } else {
+            viewModel.setCurrentSessionId(-1)
             hideHistoryList()
         }
     }
@@ -121,31 +121,8 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
         adapter.notifyDataSetChanged()
     }
 
-    // High order function
-    private fun handleDataResult(
-        status: Status,
-        handleSuccess: () -> Unit,
-        handleError: () -> Unit
-    ) {
-        when (status) {
-            Status.SUCCESS -> {
-                hideLoading()
-                handleSuccess()
-            }
-
-            Status.ERROR -> {
-                hideLoading()
-                handleError()
-            }
-
-            else -> {
-                showLoading()
-            }
-        }
-    }
-
     private fun showError(message: String?) {
-
+        Util.showMessage(requireContext(), message.toString())
     }
 
     private fun showLoading() {
@@ -216,7 +193,7 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     }
 
     private fun addClickEvents() {
-        btnRecord?.setOnClickListener {
+        ivRecord?.setOnClickListener {
             checkPermissionAndGoToRecordScreen()
         }
     }

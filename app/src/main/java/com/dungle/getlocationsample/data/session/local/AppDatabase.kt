@@ -1,11 +1,11 @@
-package com.dungle.getlocationsample.data.local
+package com.dungle.getlocationsample.data.session.local
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.dungle.getlocationsample.data.local.model.LocalSession
+import com.dungle.getlocationsample.data.session.local.model.LocalSession
 
 @Database(entities = [LocalSession::class], version = 1)
 @TypeConverters(Converters::class)

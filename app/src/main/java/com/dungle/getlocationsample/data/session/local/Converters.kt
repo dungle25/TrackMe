@@ -1,4 +1,4 @@
-package com.dungle.getlocationsample.data.local
+package com.dungle.getlocationsample.data.session.local
 
 import android.location.Location
 import androidx.room.TypeConverter

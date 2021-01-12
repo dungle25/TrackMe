@@ -7,28 +7,32 @@ import android.location.Location
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.navigation.NavDeepLinkBuilder
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
-import com.dungle.getlocationsample.data.local.AppDatabase
+import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.ui.main.MainActivity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import org.greenrobot.eventbus.EventBus
-import org.koin.android.ext.android.inject
 
 class LocationTrackerService : Service() {
 
-    private val database : AppDatabase by inject()
-    private var currentSessionId : Int = -1
+    private val session : Session = Session()
+    private val locations: MutableList<Location> = arrayListOf()
     private lateinit var locationRequest: LocationRequest
     private val locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult?) {
             super.onLocationResult(locationResult)
             locationResult?.lastLocation?.let {
-                saveToLocal(it)
+                locations.add(it)
+                session.locations = locations
+                Log.e("juju", "service: ${locations.size}")
+                EventBus.getDefault().post(session)
             }
         }
 
@@ -62,9 +66,6 @@ class LocationTrackerService : Service() {
         )
     }
 
-    private fun saveToLocal(location: Location) {
-    }
-
     private fun prepareForegroundNotification() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val titleText = getString(R.string.app_name)
@@ -76,16 +77,14 @@ class LocationTrackerService : Service() {
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(serviceChannel)
         }
-        val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            456,
-            notificationIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT
-        )
 
-        val notificationPriority = if (Build.VERSION.SDK_INT
-            >= Build.VERSION_CODES.N) {
+        val pendingIntent = NavDeepLinkBuilder(this)
+            .setComponentName(MainActivity::class.java)
+            .setGraph(R.navigation.nav_graph)
+            .setDestination(R.id.recordFragment)
+            .createPendingIntent()
+
+        val notificationPriority = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             NotificationManager.IMPORTANCE_HIGH
         } else {
             Notification.PRIORITY_HIGH

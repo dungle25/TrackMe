@@ -1,4 +1,4 @@
-package com.dungle.getlocationsample.data.local.model
+package com.dungle.getlocationsample.data.session.local.model
 
 import android.location.Location
 import androidx.room.ColumnInfo
@@ -10,7 +10,7 @@ import com.dungle.getlocationsample.model.Session
 data class LocalSession(
     @PrimaryKey
     @ColumnInfo(name = "id") val id: Int = 0,
-    @ColumnInfo(name = "locations") val locations: List<Location> = listOf(),
+    @ColumnInfo(name = "locations") val locations: MutableList<Location> = arrayListOf(),
     @ColumnInfo(name = "currentSpeed") val currentSpeed: Double = 0.0,
     @ColumnInfo(name = "averageSpeed") val avgSpeed: List<Double> = listOf(),
     @ColumnInfo(name = "distance") val distance: Double = 0.0,

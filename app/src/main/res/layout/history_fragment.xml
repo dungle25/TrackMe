@@ -15,7 +15,7 @@
         android:layout_weight="1"
         android:text="@string/current_location"
         android:visibility="visible"
-        app:layout_constraintBottom_toTopOf="@id/btnRecord"
+        app:layout_constraintBottom_toTopOf="@id/ivRecord"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -30,13 +30,13 @@
         android:textSize="25sp"
         android:textStyle="bold"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/btnRecord"
+        app:layout_constraintBottom_toTopOf="@id/ivRecord"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageButton
-        android:id="@+id/btnRecord"
+    <ImageView
+        android:id="@+id/ivRecord"
         android:layout_width="70dp"
         android:layout_height="70dp"
         android:layout_marginBottom="10dp"

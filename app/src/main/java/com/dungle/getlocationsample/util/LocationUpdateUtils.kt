@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.preference.PreferenceManager
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
@@ -32,6 +33,7 @@ class LocationUpdateUtils {
         }
 
         fun stopTrackingLocationService(context: Context?) {
+            Log.e("juju", "stopTrackingLocationService")
             if (context != null) {
                 requestLocationUpdates(context, false)
                 context.stopService(Intent(context, LocationTrackerService::class.java))
@@ -100,10 +102,6 @@ class LocationUpdateUtils {
                     Manifest.permission.ACCESS_FINE_LOCATION
                 )
             }
-        }
-
-        fun pauseTrackingLocation() {
-
         }
     }
 }

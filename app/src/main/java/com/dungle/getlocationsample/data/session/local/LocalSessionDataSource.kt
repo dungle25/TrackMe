@@ -1,7 +1,7 @@
-package com.dungle.getlocationsample.data.local
+package com.dungle.getlocationsample.data.session.local
 
-import com.dungle.getlocationsample.data.local.model.LocalSession
-import com.dungle.getlocationsample.data.source.SessionDataSource
+import com.dungle.getlocationsample.data.session.local.model.LocalSession
+import com.dungle.getlocationsample.data.session.source.SessionDataSource
 import com.dungle.getlocationsample.model.Session
 
 class LocalSessionDataSource(private val sessionDao: SessionDao) : SessionDataSource {
@@ -19,5 +19,13 @@ class LocalSessionDataSource(private val sessionDao: SessionDao) : SessionDataSo
 
     override suspend fun getSessionCount(): Int {
         return sessionDao.getSessionCount()
+    }
+
+    override suspend fun getSessionById(id: Int): Session {
+        return sessionDao.getSessionById(id).toSession()
+    }
+
+    override suspend fun saveSession(id : Int, session: Session): Long {
+        return sessionDao.insertSession(session.toLocalSession(id))
     }
 }
