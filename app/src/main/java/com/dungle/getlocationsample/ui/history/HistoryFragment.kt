@@ -174,8 +174,6 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
                             Manifest.permission.ACCESS_BACKGROUND_LOCATION
                         )
                     ) {
-                        // New session Id equal with list size cuz Id is increase by list index
-                        LocationUpdateUtils.saveCurrentRequestingSessionId(it, locationData.size)
                         findNavController().navigate(action)
                     } else {
                         activity?.requestPermissions(
@@ -193,8 +191,6 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
                     )
                 }
             } else {
-                // New session Id equal with list size cuz Id is increase by list index
-                LocationUpdateUtils.saveCurrentRequestingSessionId(it, locationData.size)
                 findNavController().navigate(action)
             }
         }

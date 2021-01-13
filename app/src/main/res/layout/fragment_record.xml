@@ -22,27 +22,49 @@
     <androidx.constraintlayout.helper.widget.Flow
         android:id="@+id/fInfo"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginBottom="10dp"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="20dp"
-        app:constraint_referenced_ids="tvDistance, tvAvgSpeed, tvTime"
+        app:constraint_referenced_ids="tvDistanceLabel, tvDistance, tvAvgSpeedLabel, tvAvgSpeed,tvTimeLabel,  tvTime"
         app:flow_wrapMode="aligned"
         app:layout_constraintBottom_toTopOf="@id/fButton"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/map" />
 
     <TextView
+        android:id="@+id/tvDistanceLabel"
+        style="@style/CommonTextViewStyle"
+        android:text="Distance" />
+
+    <TextView
+        android:padding="20dp"
         android:id="@+id/tvDistance"
-        style="@style/CommonTextViewStyle" />
+        style="@style/CommonTextViewStyle"
+        android:textSize="26sp"/>
 
     <TextView
+        android:id="@+id/tvAvgSpeedLabel"
+        style="@style/CommonTextViewStyle"
+        android:text="AVG Speed" />
+
+    <TextView
+        android:padding="20dp"
         android:id="@+id/tvAvgSpeed"
-        style="@style/CommonTextViewStyle" />
+        style="@style/CommonTextViewStyle"
+        android:textSize="26sp" />
 
     <TextView
+        android:id="@+id/tvTimeLabel"
+        style="@style/CommonTextViewStyle"
+        android:text="Time" />
+
+    <TextView
+        android:padding="20dp"
         android:id="@+id/tvTime"
-        style="@style/CommonTextViewStyle" />
+        style="@style/CommonTextViewStyle"
+        android:textSize="26sp" />
 
     <androidx.constraintlayout.helper.widget.Flow
         android:id="@+id/fButton"

@@ -3,8 +3,9 @@ package com.dungle.getlocationsample.ui.record
 import android.graphics.Bitmap
 import android.location.Location
 import android.os.Bundle
-import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -97,12 +98,12 @@ class RecordFragment : Fragment() {
 
         viewModel.trackingState.observe(viewLifecycleOwner, { status ->
             context?.let {
-                val currentSessionId = LocationUpdateUtils.getCurrentRequestingSessionId(it)
                 when (status) {
                     TrackingStatus.TRACKING -> {
                         showPauseButton()
                         if (currentInProgressSession == null) {
-                            currentInProgressSession = Session(currentSessionId)
+                            currentInProgressSession = Session()
+                            updateUI()
                         }
                         viewModel.newSession(currentInProgressSession!!)
                     }
@@ -113,7 +114,6 @@ class RecordFragment : Fragment() {
                     TrackingStatus.RESUME -> {
                         showPauseButton()
                         if (currentInProgressSession != null) {
-                            // In this case, maybe there is no data in database yet, so we assume this is the 1st session
                             viewModel.newSession(currentInProgressSession!!)
                         }
                     }
@@ -202,6 +202,7 @@ class RecordFragment : Fragment() {
                     setLocationInfoToObject(startLocation, currentLocation)
                     addMarker(startLocationLatLng, currentLocationLatLng)
                 } else {
+                    setLocationInfoToObject(startLocation, null)
                     addMarker(startLocationLatLng, null)
                 }
 
@@ -213,29 +214,36 @@ class RecordFragment : Fragment() {
         }
     }
 
-    private fun setLocationInfoToObject(startLocation: Location, currentLocation: Location) {
-        currentInProgressSession?.distance =
-            Util.calculateDistanceInKm(startLocation, currentLocation).toDouble()
-
-        currentInProgressSession?.speeds?.add(
-            Util.calculateSpeed(startLocation, currentLocation)
-        )
+    private fun setLocationInfoToObject(startLocation: Location, currentLocation: Location?) {
+        if (currentLocation != null) {
+            currentInProgressSession?.distance =
+                Util.calculateDistanceInKm(startLocation, currentLocation).toDouble()
+            currentInProgressSession?.speeds?.add(
+                Util.calculateSpeed(startLocation, currentLocation)
+            )
+        } else {
+            currentInProgressSession?.distance = 0.0
+            currentInProgressSession?.speeds?.add(0.0)
+        }
     }
 
     private fun updateUI() {
-        tvDistance?.text = getString(
-            R.string.txt_distance,
-            currentInProgressSession?.distance?.let {
-                Util.round(it).toString()
+        if (currentInProgressSession != null) {
+            tvDistance?.text = if (currentInProgressSession?.distance!! > 0.0) {
+                getString(R.string.txt_distance, Util.round(currentInProgressSession?.distance!!).toString())
+            } else {
+                getString(R.string.txt_distance, "0.0")
+
             }
-        )
-        tvAvgSpeed?.text = getString(
-            R.string.txt_speed,
-            currentInProgressSession?.speeds?.let {
-                Util.round(it.average()).toString()
+
+            tvAvgSpeed?.text = if (currentInProgressSession?.speeds != null && currentInProgressSession?.speeds!!.isNotEmpty()) {
+                getString(R.string.txt_speed, Util.round(currentInProgressSession?.speeds!!.average()).toString())
+            } else {
+                getString(R.string.txt_speed, "0.0")
             }
-        )
-        tvTime?.text = currentInProgressSession?.displayDuration
+
+            tvTime?.text = currentInProgressSession?.displayDuration
+        }
     }
 
     private fun convertToLatLngList(locations: MutableList<Location>): List<LatLng> {
@@ -272,7 +280,7 @@ class RecordFragment : Fragment() {
 
     private fun stopLocationUpdates() {
         context?.let {
-            if (LocationUpdateUtils.getCurrentRequestingSessionId(it) > -1) {
+            if (LocationUpdateUtils.isRequestingLocationUpdates(it)) {
                 LocationUpdateUtils.stopTrackingLocationService(it)
             }
         }

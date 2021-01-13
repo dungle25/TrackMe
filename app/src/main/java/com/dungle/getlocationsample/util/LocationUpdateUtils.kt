@@ -40,14 +40,6 @@ class LocationUpdateUtils {
                 .getInt(KEY_SESSION_ID, -1)
         }
 
-        fun saveCurrentRequestingSessionId(context: Context, sessionId: Int) {
-            //TODO replace with Datastore
-            PreferenceManager.getDefaultSharedPreferences(context)
-                .edit()
-                .putInt(KEY_SESSION_ID, sessionId)
-                .apply()
-        }
-
         fun pauseTrackingService(context: Context?) {
             context?.let {
                 requestLocationUpdates(it, false)
@@ -58,7 +50,6 @@ class LocationUpdateUtils {
         fun stopTrackingLocationService(context: Context?) {
             if (context != null) {
                 requestLocationUpdates(context, false)
-                saveCurrentRequestingSessionId(context, -1)
                 context.stopService(Intent(context, LocationTrackerService::class.java))
             }
         }
@@ -99,7 +90,6 @@ class LocationUpdateUtils {
         private fun checkFineLocationThenStartTracking(context: Activity, session : Session) {
             if (EasyPermissions.hasPermissions(context, Manifest.permission.ACCESS_FINE_LOCATION)) {
                 requestLocationUpdates(context, true)
-                saveCurrentRequestingSessionId(context, session.id)
                 val intent = Intent(context, LocationTrackerService::class.java)
                 val bundle = Bundle()
                 bundle.putParcelable(Constant.CURRENT_SESSION, session)

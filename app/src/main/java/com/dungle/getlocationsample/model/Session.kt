@@ -12,7 +12,7 @@ data class Session(
     var displayAvgSpeed: Double = 0.0,
     var speeds: MutableList<Double> = arrayListOf(),
     var distance: Double = 0.0,
-    var displayDuration: String = "",
+    var displayDuration: String = "00:00:00",
     var duration: Long = 0L,
     var startTime: Long = 0L,
     var endTime: Long = 0L,
