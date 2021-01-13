@@ -7,20 +7,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.dungle.getlocationsample.R
 import com.dungle.getlocationsample.TrackingStatus
 import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.ui.viewmodel.SessionViewModel
-import com.dungle.getlocationsample.util.DeviceDimensionsHelper
 import com.dungle.getlocationsample.util.LocationUpdateUtils
 import com.dungle.getlocationsample.util.Util
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.GoogleMap.SnapshotReadyCallback
-import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import kotlinx.android.synthetic.main.fragment_record.*
@@ -31,10 +26,6 @@ import java.io.ByteArrayOutputStream
 
 class RecordFragment : Fragment() {
     private val viewModel: SessionViewModel by sharedViewModel()
-    private var googleMap: GoogleMap? = null
-    private var startMarker: Marker? = null
-    private var endMarker: Marker? = null
-    private var isCameraMoved = false
     private var currentInProgressSession: Session? = null
     private var isStartNewTracking = false
 
@@ -42,14 +33,17 @@ class RecordFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        isStartNewTracking = arguments?.let { RecordFragmentArgs.fromBundle(it).isStartTracking } == true
+        isStartNewTracking =
+            arguments?.let { RecordFragmentArgs.fromBundle(it).isStartTracking } == true
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_record, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
-        mapFragment?.getMapAsync(callback)
+        context?.let {
+            viewModel.getGoogleMap(mapFragment, it)
+        }
         initBackPressEvent()
         initClickEvents()
         observerDataChanged()
@@ -205,15 +199,15 @@ class RecordFragment : Fragment() {
                     val currentLocationLatLng =
                         LatLng(currentLocation.latitude, currentLocation.longitude)
                     setLocationInfoToObject(startLocation, currentLocation)
-                    addMarker(startLocationLatLng, currentLocationLatLng)
+                    viewModel.addMarker(startLocationLatLng, currentLocationLatLng)
                 } else {
                     setLocationInfoToObject(startLocation, null)
-                    addMarker(startLocationLatLng, null)
+                    viewModel.addMarker(startLocationLatLng, null)
                 }
 
                 val latLngData = convertToLatLngList(it)
-                onDrawPathWithPoint(latLngData)
-                boundMapWithListLatLng(latLngData)
+                viewModel.onDrawPathWithPoint(latLngData)
+                viewModel.boundMapWithListLatLng(latLngData)
             }
             updateUI()
         }
@@ -235,17 +229,24 @@ class RecordFragment : Fragment() {
     private fun updateUI() {
         if (currentInProgressSession != null) {
             tvDistance?.text = if (currentInProgressSession?.distance!! > 0.0) {
-                getString(R.string.txt_distance, Util.round(currentInProgressSession?.distance!!).toString())
+                getString(
+                    R.string.txt_distance,
+                    Util.round(currentInProgressSession?.distance!!).toString()
+                )
             } else {
                 getString(R.string.txt_distance, "0.0")
 
             }
 
-            tvAvgSpeed?.text = if (currentInProgressSession?.speeds != null && currentInProgressSession?.speeds!!.isNotEmpty()) {
-                getString(R.string.txt_speed, Util.round(currentInProgressSession?.speeds!!.average()).toString())
-            } else {
-                getString(R.string.txt_speed, "0.0")
-            }
+            tvAvgSpeed?.text =
+                if (currentInProgressSession?.speeds != null && currentInProgressSession?.speeds!!.isNotEmpty()) {
+                    getString(
+                        R.string.txt_speed,
+                        Util.round(currentInProgressSession?.speeds!!.average()).toString()
+                    )
+                } else {
+                    getString(R.string.txt_speed, "0.0")
+                }
 
             tvTime?.text = currentInProgressSession?.displayDuration
         }
@@ -259,30 +260,6 @@ class RecordFragment : Fragment() {
         return latLngData
     }
 
-    private val callback = OnMapReadyCallback { googleMap ->
-        this.googleMap = googleMap
-        googleMap.setOnCameraMoveListener {
-            isCameraMoved = true
-        }
-        getGoogleMap()
-    }
-
-    private fun getGoogleMap() {
-        if (googleMap == null) {
-            val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
-            mapFragment?.getMapAsync(callback)
-        } else {
-            googleMap?.uiSettings?.isZoomControlsEnabled = true
-            googleMap?.uiSettings?.isRotateGesturesEnabled = true
-            googleMap?.setMapStyle(
-                MapStyleOptions.loadRawResourceStyle(
-                    activity,
-                    R.raw.style_map
-                )
-            )
-        }
-    }
-
     private fun stopLocationUpdates() {
         context?.let {
             if (LocationUpdateUtils.isRequestingLocationUpdates(it)) {
@@ -292,23 +269,13 @@ class RecordFragment : Fragment() {
         }
     }
 
-    private fun startTrackingLocation(currentSession : Session) {
+    private fun startTrackingLocation(currentSession: Session) {
         activity?.let {
             if (!LocationUpdateUtils.isRequestingLocationUpdates(it)) {
                 LocationUpdateUtils.startTrackingLocationService(it, currentSession)
             }
         }
     }
-
-    private fun getMarker(latLng: LatLng, title: String, markerLayout: Int) = googleMap?.addMarker(
-        MarkerOptions()
-            .position(latLng).title(title)
-            .icon(BitmapDescriptorFactory.fromBitmap(context?.let {
-                Util.createStartLocationMarker(
-                    it, markerLayout
-                )
-            }))
-    )
 
     private val snapShotCallback: SnapshotReadyCallback = object : SnapshotReadyCallback {
         var bitmap: Bitmap? = null
@@ -336,83 +303,7 @@ class RecordFragment : Fragment() {
         }
     }
 
-    private fun onDrawPathWithPoint(points: List<LatLng>) {
-        val polyLineOptions = PolylineOptions()
-        context?.let {
-            polyLineOptions.addAll(points)
-                .width(
-                    DeviceDimensionsHelper.convertDpToPixelFloat(
-                        10f,
-                        it
-                    )
-                )
-                .color(ContextCompat.getColor(it, R.color.orange))
-        }
-        googleMap?.addPolyline(polyLineOptions)
-    }
-
-//    private fun getValidPointBaseOnDistance(points: List<LatLng>): MutableList<LatLng> {
-//        val validPoints : MutableList<LatLng> = arrayListOf()
-//        for (index in points.indices) {
-//            val nextIndex = index + 1
-//            if (nextIndex <= points.size) {
-//                val point = points[index]
-//                val nextPoint = points[nextIndex]
-//                val results : FloatArray = floatArrayOf()
-////                distanceBetween(point.latitude, point.longitude, nextPoint.latitude, nextPoint.longitude, results)
-//                distanceBetween(-14.65754,  -68.17800, 13.76664, -83.61323, results)
-//            }
-//        }
-//        return validPoints
-//    }
-
-    private fun addMarker(
-        startLocation: LatLng,
-        currentLocationLatLng: LatLng?
-    ) {
-        if (startMarker == null) {
-            startMarker = getMarker(
-                startLocation,
-                "Start position",
-                R.layout.layout_start_marker
-            )
-        }
-
-        currentLocationLatLng?.let {
-            if (endMarker == null) {
-                endMarker = getMarker(
-                    it,
-                    "Current position",
-                    R.layout.layout_end_marker
-                )
-            } else {
-                endMarker?.position = it
-            }
-        }
-    }
-
-    private fun boundMapWithListLatLng(listLatLng: List<LatLng>) {
-        if (isCameraMoved.not()) {
-            val boundBuilder = LatLngBounds.Builder()
-            for (latLng in listLatLng) {
-                boundBuilder.include(latLng)
-            }
-
-            val latLngBounds = boundBuilder.build()
-            googleMap?.setOnMapLoadedCallback {
-                googleMap?.animateCamera(
-                    context?.let { DeviceDimensionsHelper.convertDpToPixel(60f, it) }?.let {
-                        CameraUpdateFactory.newLatLngBounds(
-                            latLngBounds,
-                            it
-                        )
-                    }, 400, null
-                )
-            }
-        }
-    }
-
     private fun snapShotMap() {
-        googleMap?.snapshot(snapShotCallback)
+        viewModel.googleMap?.snapshot(snapShotCallback)
     }
 }
