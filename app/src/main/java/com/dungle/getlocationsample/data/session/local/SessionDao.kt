@@ -5,7 +5,7 @@ import com.dungle.getlocationsample.data.session.local.model.LocalSession
 
 @Dao
 interface SessionDao {
-    @Query("SELECT * FROM session_table")
+    @Query("SELECT * FROM session_table ORDER BY id DESC")
     fun getAllSession(): List<LocalSession>
 
     @Query("SELECT * FROM session_table WHERE id LIKE :sessionId")
