@@ -337,21 +337,6 @@ class RecordFragment : Fragment() {
         googleMap?.addPolyline(polyLineOptions)
     }
 
-//    private fun getValidPointBaseOnDistance(points: List<LatLng>): MutableList<LatLng> {
-//        val validPoints : MutableList<LatLng> = arrayListOf()
-//        for (index in points.indices) {
-//            val nextIndex = index + 1
-//            if (nextIndex <= points.size) {
-//                val point = points[index]
-//                val nextPoint = points[nextIndex]
-//                val results : FloatArray = floatArrayOf()
-////                distanceBetween(point.latitude, point.longitude, nextPoint.latitude, nextPoint.longitude, results)
-//                distanceBetween(-14.65754,  -68.17800, 13.76664, -83.61323, results)
-//            }
-//        }
-//        return validPoints
-//    }
-
     private fun addMarker(
         startLocation: LatLng,
         currentLocationLatLng: LatLng?

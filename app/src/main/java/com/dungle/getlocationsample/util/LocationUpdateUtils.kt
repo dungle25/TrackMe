@@ -7,7 +7,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.preference.PreferenceManager
-import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
@@ -17,34 +16,32 @@ import pub.devrel.easypermissions.EasyPermissions
 
 class LocationUpdateUtils {
     companion object {
-        private const val KEY_SESSION_ID = "KEY_SESSION_ID"
-        private const val KEY_REQUESTING_LOCATION_UPDATES = "KEY_REQUESTING_LOCATION_UPDATES"
 
         fun isRequestingLocationUpdates(context: Context): Boolean {
             //TODO replace with Datastore
             return PreferenceManager.getDefaultSharedPreferences(context)
-                .getBoolean(KEY_REQUESTING_LOCATION_UPDATES, false)
+                .getBoolean(Constant.KEY_REQUESTING_LOCATION_UPDATES, false)
         }
 
         fun requestLocationUpdates(context: Context, isRequestingLocationUpdates: Boolean) {
             //TODO replace with Datastore
             PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
-                .putBoolean(KEY_REQUESTING_LOCATION_UPDATES, isRequestingLocationUpdates)
+                .putBoolean(Constant.KEY_REQUESTING_LOCATION_UPDATES, isRequestingLocationUpdates)
                 .apply()
         }
 
         fun getCurrentRequestingSessionId(context: Context): Int {
             //TODO replace with Datastore
             return PreferenceManager.getDefaultSharedPreferences(context)
-                .getInt(KEY_SESSION_ID, -1)
+                .getInt(Constant.KEY_SESSION_ID, -1)
         }
 
         fun saveCurrentRequestingSessionId(context: Context, sessionId: Int) {
             //TODO replace with Datastore
             PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
-                .putInt(KEY_SESSION_ID, sessionId)
+                .putInt(Constant.KEY_SESSION_ID, sessionId)
                 .apply()
         }
 

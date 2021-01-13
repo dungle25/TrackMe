@@ -14,5 +14,8 @@ class Constant {
         const val CHANNEL_ID_FOREGROUND_NOTIFICATION = "while_in_use_channel_01"
         const val NOTIFICATION_ID_FOREGROUND = 1000
         const val LOCATION_REQUEST = 123
+
+        const val KEY_SESSION_ID = "KEY_SESSION_ID"
+        const val KEY_REQUESTING_LOCATION_UPDATES = "KEY_REQUESTING_LOCATION_UPDATES"
     }
 }
