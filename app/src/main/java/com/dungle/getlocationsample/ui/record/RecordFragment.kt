@@ -36,11 +36,13 @@ class RecordFragment : Fragment() {
     private var endMarker: Marker? = null
     private var isCameraMoved = false
     private var currentInProgressSession: Session? = null
+    private var isStartNewTracking = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        isStartNewTracking = arguments?.let { RecordFragmentArgs.fromBundle(it).isStartTracking } == true
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_record, container, false)
     }
@@ -56,7 +58,10 @@ class RecordFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         EventBus.getDefault().register(this)
-        startTracking()
+        if (isStartNewTracking) {
+            isStartNewTracking = false
+            startTracking()
+        }
     }
 
     override fun onStop() {
@@ -65,6 +70,34 @@ class RecordFragment : Fragment() {
     }
 
     private fun observerDataChanged() {
+        viewModel.trackingState.observe(viewLifecycleOwner, { status ->
+            context?.let {
+                when (status) {
+                    TrackingStatus.TRACKING -> {
+                        showPauseButton()
+                        if (currentInProgressSession == null) {
+                            currentInProgressSession = Session()
+                            updateUI()
+                        }
+                        viewModel.setCurrentSession(currentInProgressSession!!)
+                    }
+                    TrackingStatus.PAUSED -> {
+                        showResumeAndStopButton()
+                        LocationUpdateUtils.pauseTrackingService(it)
+                    }
+                    TrackingStatus.RESUME -> {
+                        showPauseButton()
+                        if (currentInProgressSession != null) {
+                            viewModel.setCurrentSession(currentInProgressSession!!)
+                        }
+                    }
+                    else -> {
+                        stopTracking()
+                    }
+                }
+            }
+        })
+
         viewModel.databaseSaveSessionState.observe(viewLifecycleOwner, { dataResult ->
             Util.handleDataResult(
                 dataResult.status,
@@ -88,40 +121,12 @@ class RecordFragment : Fragment() {
                 {
                     dataResult.data?.let {
                         currentInProgressSession = it
-                        startTrackingLocation()
+                        startTrackingLocation(it)
                     }
                 },
                 { showError(dataResult.message) },
                 { hideLoading() },
                 { showLoading() })
-        })
-
-        viewModel.trackingState.observe(viewLifecycleOwner, { status ->
-            context?.let {
-                when (status) {
-                    TrackingStatus.TRACKING -> {
-                        showPauseButton()
-                        if (currentInProgressSession == null) {
-                            currentInProgressSession = Session()
-                            updateUI()
-                        }
-                        viewModel.newSession(currentInProgressSession!!)
-                    }
-                    TrackingStatus.PAUSED -> {
-                        showResumeAndStopButton()
-                        LocationUpdateUtils.pauseTrackingService(it)
-                    }
-                    TrackingStatus.RESUME -> {
-                        showPauseButton()
-                        if (currentInProgressSession != null) {
-                            viewModel.newSession(currentInProgressSession!!)
-                        }
-                    }
-                    else -> {
-                        stopTracking()
-                    }
-                }
-            }
         })
     }
 
@@ -281,15 +286,16 @@ class RecordFragment : Fragment() {
     private fun stopLocationUpdates() {
         context?.let {
             if (LocationUpdateUtils.isRequestingLocationUpdates(it)) {
+                currentInProgressSession = null
                 LocationUpdateUtils.stopTrackingLocationService(it)
             }
         }
     }
 
-    private fun startTrackingLocation() {
+    private fun startTrackingLocation(currentSession : Session) {
         activity?.let {
             if (!LocationUpdateUtils.isRequestingLocationUpdates(it)) {
-                LocationUpdateUtils.startTrackingLocationService(it, currentInProgressSession!!)
+                LocationUpdateUtils.startTrackingLocationService(it, currentSession)
             }
         }
     }

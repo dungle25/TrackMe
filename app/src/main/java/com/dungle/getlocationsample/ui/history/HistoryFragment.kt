@@ -163,6 +163,7 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     private fun checkPermissionAndGoToRecordScreen() {
         context?.let {
             val action = HistoryFragmentDirections.actionHistoryFragmentToRecordFragment()
+            action.isStartTracking = true
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 if (EasyPermissions.hasPermissions(
                         it,

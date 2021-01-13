@@ -19,7 +19,6 @@ data class LocalSession(
 ) {
     fun toSession(): Session {
         return Session(
-            id = id,
             locations = locations,
             speeds = speeds,
             distance = distance,

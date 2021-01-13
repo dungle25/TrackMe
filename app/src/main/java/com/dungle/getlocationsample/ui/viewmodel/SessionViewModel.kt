@@ -10,10 +10,8 @@ import com.dungle.getlocationsample.data.session.repo.SessionRepository
 import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.model.wrapper.DataExceptionHandler
 import com.dungle.getlocationsample.model.wrapper.DataResult
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.dungle.getlocationsample.model.wrapper.VolatileLiveData
+import kotlinx.coroutines.*
 
 class SessionViewModel(
     private val sessionRepository: SessionRepository
@@ -28,8 +26,8 @@ class SessionViewModel(
     val databaseSaveSessionState: LiveData<DataResult<Boolean>>
         get() = _databaseSaveSessionState
 
-    // Latest Session
-    private var _currentInProgressSession: MutableLiveData<DataResult<Session>> = MutableLiveData()
+    // Current tracking Session
+    private var _currentInProgressSession: VolatileLiveData<DataResult<Session>> = VolatileLiveData()
     val currentInProgressSession: LiveData<DataResult<Session>>
         get() = _currentInProgressSession
 
@@ -38,7 +36,7 @@ class SessionViewModel(
     val isNeedReloadSessionList: LiveData<Boolean>
         get() = _isNeedReloadSessionList
 
-    // Request update session list
+    // Session tracking statuses
     private var _trackingState: MutableLiveData<TrackingStatus> = MutableLiveData()
     val trackingState: LiveData<TrackingStatus>
         get() = _trackingState
@@ -76,11 +74,17 @@ class SessionViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _databaseSaveSessionState.postValue(DataResult.loading(null))
             try {
+
                 coroutineScope {
-                    val state = withContext(Dispatchers.IO) {
+//                    val state = withContext(Dispatchers.IO) {
+//                        sessionRepository.saveSession(session)
+//                    }
+
+                    val task = async {
                         sessionRepository.saveSession(session)
                     }
-                    _databaseSaveSessionState.postValue(DataResult.success(state != -1L))
+                    _databaseSaveSessionState.postValue(DataResult.success(task.await() > -1L))
+//                    _databaseSaveSessionState.postValue(DataResult.success(state != -1L))
                 }
             } catch (e: Exception) {
                 _databaseSaveSessionState.postValue(DataExceptionHandler().handleException(e))
@@ -88,7 +92,7 @@ class SessionViewModel(
         }
     }
 
-    fun newSession(session: Session) {
+    fun setCurrentSession(session: Session) {
         _currentInProgressSession.postValue(DataResult.success(session))
     }
 }

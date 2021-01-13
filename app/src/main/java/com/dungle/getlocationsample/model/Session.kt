@@ -20,7 +20,6 @@ data class Session(
 ) : Parcelable {
     fun toLocalSession(): LocalSession {
         return LocalSession(
-            id = id,
             locations = locations,
             speeds = speeds,
             distance = distance,
