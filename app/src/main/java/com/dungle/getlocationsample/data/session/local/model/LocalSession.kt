@@ -11,12 +11,20 @@ data class LocalSession(
     @PrimaryKey
     @ColumnInfo(name = "id") val id: Int = 0,
     @ColumnInfo(name = "locations") val locations: MutableList<Location> = arrayListOf(),
-    @ColumnInfo(name = "currentSpeed") val displaySpeed: Double = 0.0,
     @ColumnInfo(name = "averageSpeed") val speeds: MutableList<Double> = arrayListOf(),
     @ColumnInfo(name = "distance") val distance: Double = 0.0,
-    @ColumnInfo(name = "time") val totalTimeInMillis: String = ""
+    @ColumnInfo(name = "time") val displayDuration: String = "",
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB) var mapSnapshot: ByteArray? = null
+
 ) {
     fun toSession(): Session {
-        return Session(locations, displaySpeed, speeds, distance, totalTimeInMillis)
+        return Session(
+            id = id,
+            locations = locations,
+            speeds = speeds,
+            distance = distance,
+            displayDuration = displayDuration,
+            mapSnapshot = mapSnapshot
+        )
     }
 }

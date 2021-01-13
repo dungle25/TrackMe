@@ -1,13 +1,11 @@
 package com.dungle.getlocationsample.ui.history
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -16,6 +14,7 @@ import com.dungle.getlocationsample.R
 import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.ui.SessionAdapter
 import com.dungle.getlocationsample.ui.viewmodel.SessionViewModel
+import com.dungle.getlocationsample.util.LocationUpdateUtils
 import com.dungle.getlocationsample.util.Util
 import kotlinx.android.synthetic.main.history_fragment.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
@@ -25,14 +24,19 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     private val viewModel: SessionViewModel by sharedViewModel()
     private lateinit var adapter: SessionAdapter
     private val locationData: MutableList<Session> = arrayListOf()
-    private val locationPerms = arrayOf(
-        Manifest.permission.ACCESS_COARSE_LOCATION,
-        Manifest.permission.ACCESS_FINE_LOCATION
-    )
-    private val storagePerms = arrayOf(
-        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    )
+    private val locationPerms =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+            )
+        } else {
+            arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -51,6 +55,13 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     override fun onStart() {
         super.onStart()
         viewModel.getAllSessionHistory()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        context?.let {
+            LocationUpdateUtils.requestLocationUpdates(it, false)
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -74,14 +85,6 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
                 Constant.LOCATION_REQUEST,
                 *locationPerms
             )
-            Constant.BACKGROUND_REQUEST -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                EasyPermissions.requestPermissions(
-                    this,
-                    "TrackMe needs to run in background",
-                    Constant.BACKGROUND_REQUEST,
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                )
-            }
         }
     }
 
@@ -93,15 +96,19 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
                 { hideLoading() },
                 { showLoading() })
         })
+
+        viewModel.isNeedReloadSessionList.observe(viewLifecycleOwner, { needReload ->
+            if (needReload) {
+                viewModel.getAllSessionHistory()
+            }
+        })
     }
 
     private fun onHistoryDataObserved(data: List<Session>?) {
         if (data != null && data.isNotEmpty()) {
-            viewModel.setCurrentSessionId(data.size - 1)
             loadDataToList(data)
             showHistoryList()
         } else {
-            viewModel.setCurrentSessionId(-1)
             hideHistoryList()
         }
     }
@@ -117,6 +124,7 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     }
 
     private fun loadDataToList(it: List<Session>) {
+        locationData.clear()
         locationData.addAll(it)
         adapter.notifyDataSetChanged()
     }
@@ -146,52 +154,6 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
         }
     }
 
-    private fun verifyPermissions() {
-        context?.let {
-            if (!EasyPermissions.hasPermissions(
-                    it,
-                    *locationPerms
-                )
-            ) {
-                EasyPermissions.requestPermissions(
-                    this,
-                    "TrackMe needs your permission to access to your device location.\nPlease turn ON in your settings.",
-                    Constant.LOCATION_REQUEST,
-                    *locationPerms
-                )
-            }
-
-            if (!EasyPermissions.hasPermissions(
-                    it,
-                    *storagePerms
-                )
-            ) {
-                EasyPermissions.requestPermissions(
-                    this,
-                    "TrackMe needs to access to media.\nPlease turn ON in your settings.",
-                    Constant.LOCATION_REQUEST,
-                    *storagePerms
-                )
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                if (!EasyPermissions.hasPermissions(
-                        it,
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                    )
-                ) {
-                    EasyPermissions.requestPermissions(
-                        this,
-                        "TrackMe needs to run in background",
-                        Constant.BACKGROUND_REQUEST,
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                    )
-
-                }
-            }
-        }
-    }
-
     private fun addClickEvents() {
         ivRecord?.setOnClickListener {
             checkPermissionAndGoToRecordScreen()
@@ -200,26 +162,40 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
 
     private fun checkPermissionAndGoToRecordScreen() {
         context?.let {
-            if (ActivityCompat.checkSelfPermission(
-                    it,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(
-                    it,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(
-                    it,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(
-                    it,
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                verifyPermissions()
+            val action = HistoryFragmentDirections.actionHistoryFragmentToRecordFragment()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (EasyPermissions.hasPermissions(
+                        it,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    )
+                ) {
+                    if (EasyPermissions.hasPermissions(
+                            it,
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                        )
+                    ) {
+                        // New session Id equal with list size cuz Id is increase by list index
+                        LocationUpdateUtils.saveCurrentRequestingSessionId(it, locationData.size)
+                        findNavController().navigate(action)
+                    } else {
+                        activity?.requestPermissions(
+                            arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                            Constant.LOCATION_REQUEST
+                        )
+                    }
+                } else {
+                    activity?.requestPermissions(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                        ),
+                        Constant.LOCATION_REQUEST
+                    )
+                }
             } else {
-                findNavController().navigate(HistoryFragmentDirections.actionHistoryFragmentToRecordFragment())
+                // New session Id equal with list size cuz Id is increase by list index
+                LocationUpdateUtils.saveCurrentRequestingSessionId(it, locationData.size)
+                findNavController().navigate(action)
             }
         }
     }

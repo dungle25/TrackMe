@@ -18,7 +18,7 @@ class SessionRepositoryImpl(
         return localSessionDataSource.getSessionById(id)
     }
 
-    override suspend fun saveSession(id : Int, session: Session): Long {
-        return localSessionDataSource.saveSession(id, session)
+    override suspend fun saveSession(session: Session): Long {
+        return localSessionDataSource.saveSession(session)
     }
 }

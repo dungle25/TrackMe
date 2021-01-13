@@ -11,9 +11,8 @@
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="300dp"
         android:layout_marginBottom="10dp"
-        app:layout_constraintBottom_toTopOf="@id/fInfo"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -26,42 +25,24 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
         android:orientation="horizontal"
+        android:padding="20dp"
         app:constraint_referenced_ids="tvDistance, tvAvgSpeed, tvTime"
         app:flow_wrapMode="aligned"
         app:layout_constraintBottom_toTopOf="@id/fButton"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/map" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/tvDistance"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:maxLines="3"
-        android:text="Distance"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        style="@style/CommonTextViewStyle" />
 
     <TextView
         android:id="@+id/tvAvgSpeed"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:maxLines="3"
-        android:text="AvgSpeed"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        style="@style/CommonTextViewStyle" />
 
     <TextView
         android:id="@+id/tvTime"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:maxLines="3"
-        android:text="00:15:52"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        style="@style/CommonTextViewStyle" />
 
     <androidx.constraintlayout.helper.widget.Flow
         android:id="@+id/fButton"

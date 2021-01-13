@@ -5,8 +5,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.location.Location
-import android.os.Build.VERSION
-import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,18 +14,6 @@ import kotlin.math.*
 
 class Util {
     companion object {
-        fun checkMockLocation(context: Context, location: Location): Boolean {
-            val isMock: Boolean = if (VERSION.SDK_INT >= 18) {
-                location.isFromMockProvider
-            } else {
-                Settings.Secure.getString(
-                    context.contentResolver,
-                    Settings.Secure.ALLOW_MOCK_LOCATION
-                ) != "0"
-            }
-            return isMock
-        }
-
         @SuppressLint("InflateParams")
         fun createStartLocationMarker(context: Context, markerLayout: Int): Bitmap {
             val markerView: View =
@@ -102,6 +88,13 @@ class Util {
             return 2 * asin(sqrt(a))
         }
 
+        fun calculateDistanceInKm(
+            startLocation: Location,
+            currentLocation: Location
+        ): Float {
+            return startLocation.distanceTo(currentLocation) / 1000
+        }
+
         fun calculateSpeed(
             startLocation: Location,
             currentLocation: Location
@@ -112,5 +105,9 @@ class Util {
             ) / (currentLocation.time - startLocation.time)
         }
 
+        fun round(value: Double): Double {
+            val scale = 10.0.pow(1.toDouble()).toInt()
+            return (value * scale).roundToInt().toDouble() / scale
+        }
     }
 }

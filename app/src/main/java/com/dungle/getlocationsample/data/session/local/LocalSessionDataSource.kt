@@ -25,7 +25,7 @@ class LocalSessionDataSource(private val sessionDao: SessionDao) : SessionDataSo
         return sessionDao.getSessionById(id).toSession()
     }
 
-    override suspend fun saveSession(id : Int, session: Session): Long {
-        return sessionDao.insertSession(session.toLocalSession(id))
+    override suspend fun saveSession(session: Session): Long {
+        return sessionDao.insertSession(session.toLocalSession())
     }
 }

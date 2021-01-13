@@ -1,9 +1,11 @@
 package com.dungle.getlocationsample.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dungle.getlocationsample.TrackingStatus
 import com.dungle.getlocationsample.data.session.repo.SessionRepository
 import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.model.wrapper.DataExceptionHandler
@@ -16,11 +18,6 @@ import kotlinx.coroutines.withContext
 class SessionViewModel(
     private val sessionRepository: SessionRepository
 ) : ViewModel() {
-    // Store latest session Id
-    private var _currentSessionId: MutableLiveData<Int> = MutableLiveData()
-    val currentSessionId: LiveData<Int>
-        get() = _currentSessionId
-
     // All session history data
     private var _sessionHistoryData: MutableLiveData<DataResult<List<Session>>> = MutableLiveData()
     val sessionHistoryData: LiveData<DataResult<List<Session>>>
@@ -36,7 +33,18 @@ class SessionViewModel(
     val currentInProgressSession: LiveData<DataResult<Session>>
         get() = _currentInProgressSession
 
+    // Request update session list
+    private var _isNeedReloadSessionList: MutableLiveData<Boolean> = MutableLiveData()
+    val isNeedReloadSessionList: LiveData<Boolean>
+        get() = _isNeedReloadSessionList
+
+    // Request update session list
+    private var _trackingState: MutableLiveData<TrackingStatus> = MutableLiveData()
+    val trackingState: LiveData<TrackingStatus>
+        get() = _trackingState
+
     fun getAllSessionHistory() {
+        setNeedReloadSessionList(false)
         viewModelScope.launch(Dispatchers.IO) {
             _sessionHistoryData.postValue(DataResult.loading(null))
             try {
@@ -52,8 +60,16 @@ class SessionViewModel(
         }
     }
 
-    fun setCurrentSessionId(id : Int) {
-        _currentSessionId.value = id
+    fun setNeedReloadSessionList(needReload: Boolean) {
+        _isNeedReloadSessionList.value = needReload
+    }
+
+    fun resetSaveSessionState() {
+        _databaseSaveSessionState.value = DataResult.success(false)
+    }
+
+    fun setTrackingStatus(status: TrackingStatus) {
+        _trackingState.value = status
     }
 
     fun saveSession(session: Session) {
@@ -62,7 +78,7 @@ class SessionViewModel(
             try {
                 coroutineScope {
                     val state = withContext(Dispatchers.IO) {
-                        sessionRepository.saveSession(0, session)
+                        sessionRepository.saveSession(session)
                     }
                     _databaseSaveSessionState.postValue(DataResult.success(state != -1L))
                 }
@@ -72,19 +88,7 @@ class SessionViewModel(
         }
     }
 
-    fun getCurrentInProgressSession(sessionId : Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            _currentInProgressSession.postValue(DataResult.loading(null))
-            try {
-                coroutineScope {
-                    val session = withContext(Dispatchers.IO) {
-                        sessionRepository.getSessionById(sessionId)
-                    }
-                    _currentInProgressSession.postValue(DataResult.success(session))
-                }
-            } catch (e: Exception) {
-                _currentInProgressSession.postValue(DataExceptionHandler().handleException(e))
-            }
-        }
+    fun newSession(session: Session) {
+        _currentInProgressSession.postValue(DataResult.success(session))
     }
 }

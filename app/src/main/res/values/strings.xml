@@ -5,6 +5,6 @@
     <string name="btn_cancel">Cancel</string>
     <string name="txt_ask_location_permission">TrackMe needs your permission to access to your device location.\n\nPlease turn ON in your settings.</string>
     <string name="txt_app_running_in_background">Your session is tracking</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="txt_distance">%s km</string>
+    <string name="txt_speed">%s km/h</string>
 </resources>

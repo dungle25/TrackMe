@@ -1,17 +1,15 @@
 package com.dungle.getlocationsample.ui
 
-import android.location.Location
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.dungle.getlocationsample.Constant
+import com.bumptech.glide.Glide
 import com.dungle.getlocationsample.R
 import com.dungle.getlocationsample.model.Session
-import com.google.android.gms.maps.*
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MapStyleOptions
+import com.dungle.getlocationsample.util.Util
 import kotlinx.android.extensions.LayoutContainer
+import kotlinx.android.synthetic.main.item_session.*
 
 class SessionAdapter(private val data: List<Session>) :
     RecyclerView.Adapter<SessionAdapter.ViewHolder>() {
@@ -22,8 +20,7 @@ class SessionAdapter(private val data: List<Session>) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val session = data[position]
-        holder.bind(session)
+        holder.bind(data[position])
     }
 
     override fun getItemCount(): Int {
@@ -31,45 +28,26 @@ class SessionAdapter(private val data: List<Session>) :
     }
 
     class ViewHolder(override val containerView: View) : RecyclerView.ViewHolder(containerView),
-        LayoutContainer, OnMapReadyCallback {
-        var currentLocation: Location? = null
-        var map: MapView? = null
+        LayoutContainer {
         fun bind(session: Session) {
-            initMap(containerView)
-        }
-
-        private fun initMap(containerView: View) {
-            map = containerView.findViewById(R.id.mapView)
-            if (map != null) {
-                map!!.onCreate(null)
-                map!!.onResume()
-                map!!.getMapAsync(this)
+            session.mapSnapshot?.let {
+                Glide.with(containerView.context)
+                    .asBitmap()
+                    .load(it)
+                    .fitCenter()
+                    .into(ivMap)
             }
-        }
-
-        override fun onMapReady(googleMap: GoogleMap?) {
-            googleMap?.let {
-                settingMap(it)
-            }
-            MapsInitializer.initialize(containerView.context)
-            currentLocation?.let {
-                googleMap?.moveCamera(
-                    CameraUpdateFactory.newLatLngZoom(
-                        LatLng(it.latitude, it.longitude),
-                        Constant.ZOOM_LEVEL_OVER
-                    )
-                )
-            }
-        }
-
-        private fun settingMap(map: GoogleMap?) {
-            map?.uiSettings?.isZoomControlsEnabled = false
-            map?.uiSettings?.isRotateGesturesEnabled = false
-            map?.setMapStyle(
-                MapStyleOptions.loadRawResourceStyle(
-                    containerView.context, R.raw.mapstyle
-                )
+            tvDistance?.text = containerView.context.getString(
+                R.string.txt_distance, Util.round(
+                    session.distance
+                ).toString()
             )
+            tvAvgSpeed?.text = containerView.context.getString(
+                R.string.txt_speed, Util.round(
+                    session.speeds.average()
+                ).toString()
+            )
+            tvTime?.text = session.displayDuration
         }
     }
 }

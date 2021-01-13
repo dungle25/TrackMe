@@ -34,16 +34,17 @@ class LocationTrackerService : Service() {
             super.onLocationResult(locationResult)
             locationResult?.lastLocation?.let {
                 session?.locations?.add(it)
-                Log.e("juju", "service: ${session?.locations?.size}")
-                EventBus.getDefault().post(session)
             }
         }
     }
 
-    var runnable: Runnable = object : Runnable {
+    private var runnable: Runnable = object : Runnable {
         override fun run() {
-            session?.totalTimeInMillis = StopwatchHelper.toString()
-            Log.e("juju", "service: $StopwatchHelper")
+            session?.displayDuration = StopwatchHelper.toString()
+            session?.duration = StopwatchHelper.currentTime - StopwatchHelper.startTime
+            session?.startTime = StopwatchHelper.startTime
+            session?.endTime = StopwatchHelper.currentTime
+            EventBus.getDefault().post(session)
             handler.postDelayed(this, 1000)
         }
     }
@@ -69,7 +70,7 @@ class LocationTrackerService : Service() {
             Session()
         }
 
-        if (session != null) {
+        if (session != null && session!!.startTime > 0) {
             StopwatchHelper.startTime = session!!.startTime
             StopwatchHelper.currentTime = session!!.endTime
             StopwatchHelper.resume()
@@ -77,7 +78,7 @@ class LocationTrackerService : Service() {
             StopwatchHelper.start()
         }
 
-        handler.postDelayed(runnable, 1000)
+        handler.post(runnable)
 
         prepareForegroundNotification()
         startLocationUpdates()
@@ -142,6 +143,7 @@ class LocationTrackerService : Service() {
         locationRequest = LocationRequest.create()
         locationRequest.interval = Constant.REQUEST_INTERVAL
         locationRequest.fastestInterval = Constant.FASTEST_REQUEST_INTERVAL
+        locationRequest.smallestDisplacement = Constant.SMALLEST_DISPLACEMENT
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
     }
 }

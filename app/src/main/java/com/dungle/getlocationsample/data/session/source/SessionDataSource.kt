@@ -6,5 +6,5 @@ interface SessionDataSource {
     suspend fun getAllSession(): List<Session>
     suspend fun getSessionCount(): Int
     suspend fun getSessionById(id : Int) : Session
-    suspend fun saveSession(id : Int, session: Session) : Long
+    suspend fun saveSession(session: Session) : Long
 }

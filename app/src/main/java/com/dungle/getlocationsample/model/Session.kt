@@ -7,22 +7,25 @@ import kotlinx.android.parcel.Parcelize
 
 @Parcelize
 data class Session(
+    var id: Int = 0,
     var locations: MutableList<Location> = arrayListOf(),
     var displayAvgSpeed: Double = 0.0,
     var speeds: MutableList<Double> = arrayListOf(),
     var distance: Double = 0.0,
-    var totalTimeInMillis: String = "",
+    var displayDuration: String = "",
+    var duration: Long = 0L,
     var startTime: Long = 0L,
-    var endTime: Long = 0L
+    var endTime: Long = 0L,
+    var mapSnapshot: ByteArray? = null
 ) : Parcelable {
-    fun toLocalSession(id: Int): LocalSession {
+    fun toLocalSession(): LocalSession {
         return LocalSession(
             id = id,
             locations = locations,
-            displaySpeed = displayAvgSpeed,
             speeds = speeds,
             distance = distance,
-            totalTimeInMillis = totalTimeInMillis
+            displayDuration = displayDuration,
+            mapSnapshot = mapSnapshot
         )
     }
 }

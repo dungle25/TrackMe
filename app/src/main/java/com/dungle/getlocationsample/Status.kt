@@ -5,3 +5,7 @@ enum class Status {
     ERROR,
     LOADING
 }
+
+enum class TrackingStatus {
+    TRACKING, PAUSED, STOPPED, RESUME
+}

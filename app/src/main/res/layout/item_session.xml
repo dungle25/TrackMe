@@ -6,44 +6,36 @@
     android:layout_height="wrap_content"
     map:ignore="MissingConstraints">
 
-    <com.google.android.gms.maps.MapView
-        android:id="@+id/mapView"
+    <ImageView
+        android:id="@+id/ivMap"
         android:layout_width="match_parent"
-        android:layout_height="230dp"
+        android:layout_height="300dp"
+        android:contentDescription="@string/app_name"
         app:layout_constraintBottom_toTopOf="@id/flow"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        map:liteMode="true" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.constraintlayout.helper.widget.Flow
         android:id="@+id/flow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:padding="20dp"
         android:orientation="horizontal"
         app:constraint_referenced_ids="tvDistance, tvAvgSpeed, tvTime"
         app:flow_wrapMode="aligned"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/mapView" />
+        app:layout_constraintTop_toBottomOf="@id/ivMap" />
 
     <TextView
         android:id="@+id/tvDistance"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="Distance" />
+        style="@style/CommonTextViewStyle" />
 
     <TextView
         android:id="@+id/tvAvgSpeed"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="AvgSpeed" />
+        style="@style/CommonTextViewStyle" />
 
     <TextView
         android:id="@+id/tvTime"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="00:15:52" />
+        style="@style/CommonTextViewStyle" />
 </androidx.constraintlayout.widget.ConstraintLayout>
