@@ -25,8 +25,4 @@ class SessionRepositoryImpl(
             localSessionDataSource.saveSession(session)
         }
     }
-
-    override fun saveSessionWithWorker(session: Session) {
-         return localSessionDataSource.saveSessionWithWorker(session)
-    }
 }

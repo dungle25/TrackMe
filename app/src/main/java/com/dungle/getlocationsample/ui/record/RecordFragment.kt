@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,14 +15,10 @@ import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
 import com.dungle.getlocationsample.R
 import com.dungle.getlocationsample.TrackingStatus
-import com.dungle.getlocationsample.data.session.work_manager.InsertSessionWorker
 import com.dungle.getlocationsample.model.LocationData
 import com.dungle.getlocationsample.model.Session
-import com.dungle.getlocationsample.model.wrapper.DataResult
 import com.dungle.getlocationsample.service.LocationTrackerService
 import com.dungle.getlocationsample.ui.viewmodel.SessionViewModel
 import com.dungle.getlocationsample.util.DeviceDimensionsHelper
@@ -301,6 +298,10 @@ open class RecordFragment : Fragment() {
                 )
             currentInProgressSession?.displayAvgSpeed =
                 Util.calculateSpeed(startLocation, currentLocation)
+            Util.showMessage(
+                requireContext(),
+                "speed: ${Util.calculateSpeed(startLocation, currentLocation)}"
+            )
             currentInProgressSession?.speeds?.add(
                 Util.calculateSpeed(startLocation, currentLocation)
             )
@@ -416,12 +417,7 @@ open class RecordFragment : Fragment() {
 
     private fun saveToLocal() {
         currentInProgressSession?.let {
-            context?.let { context ->
-//                viewModel.saveSessionWithWorker(context, it)
-//                getInsertSessionWorkerState()
-                viewModel.saveSession(it)
-            }
-
+            viewModel.saveSession(it)
         }
     }
 
@@ -488,17 +484,5 @@ open class RecordFragment : Fragment() {
 
     private fun snapShotMap() {
         googleMap?.snapshot(snapShotCallback)
-    }
-
-    private fun getInsertSessionWorkerState() {
-        context?.let {
-            WorkManager.getInstance(it)
-                .getWorkInfoByIdLiveData(InsertSessionWorker.workerUUID)
-                .observe(viewLifecycleOwner, { workInfo ->
-                    if (workInfo != null && workInfo.state == WorkInfo.State.SUCCEEDED) {
-                        viewModel.setSaveSessionState(DataResult.success(true))
-                    }
-                })
-        }
     }
 }

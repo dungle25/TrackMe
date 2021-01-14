@@ -7,5 +7,4 @@ interface SessionDataSource {
     suspend fun getSessionCount(): Int
     suspend fun getSessionById(id : Int) : Session
     suspend fun saveSession(session: Session) : Long
-    fun saveSessionWithWorker(session: Session)
 }
