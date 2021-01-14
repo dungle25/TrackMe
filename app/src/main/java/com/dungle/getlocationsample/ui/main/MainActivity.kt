@@ -7,7 +7,9 @@ import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
+import com.dungle.getlocationsample.TrackingStatus
 import com.dungle.getlocationsample.ui.history.HistoryFragmentDirections
+import com.dungle.getlocationsample.util.LocationUpdateUtils
 
 
 class MainActivity : AppCompatActivity() {
@@ -27,7 +29,7 @@ class MainActivity : AppCompatActivity() {
         val extras = intent.extras
         if (extras != null) {
             val fromNotification = extras.getBoolean(Constant.FROM_NOTIFICATION, false)
-            if (fromNotification) {
+            if (fromNotification && LocationUpdateUtils.getCurrentTrackingStatus(this) != TrackingStatus.STOPPED ) {
                 findNavController(R.id.nav_host_fragment).navigate(HistoryFragmentDirections.actionHistoryFragmentToRecordFragment())
             }
         }

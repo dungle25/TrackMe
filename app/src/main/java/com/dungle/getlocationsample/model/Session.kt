@@ -1,5 +1,6 @@
 package com.dungle.getlocationsample.model
 
+import android.location.Location
 import android.os.Parcelable
 import com.dungle.getlocationsample.data.session.local.model.LocalSession
 import com.google.android.gms.maps.model.LatLng
@@ -9,9 +10,9 @@ import kotlinx.android.parcel.Parcelize
 data class Session(
     var id: Int = 0,
     var locations: MutableList<LocationData> = arrayListOf(),
-    var displayAvgSpeed: Double = 0.0,
+    var displayAvgSpeed: Double = 0.0, // in km/h
     var speeds: MutableList<Double> = arrayListOf(),
-    var distance: Double = 0.0,
+    var distance: Double = 0.0, // in km
     var displayDuration: String = "00:00:00",
     var duration: Long = 0L,
     var startTime: Long = 0L,
@@ -37,5 +38,16 @@ data class LocationData(
 ) : Parcelable {
     fun toLatLng(): LatLng {
         return LatLng(lat, long)
+    }
+
+    fun distanceToInKm(target: LatLng): Double {
+        val originLocation = Location("")
+        originLocation.latitude = this.lat
+        originLocation.longitude = this.long
+
+        val targetLocation = Location("")
+        targetLocation.latitude = target.latitude
+        targetLocation.longitude = target.longitude
+        return (originLocation.distanceTo(targetLocation) / 1000).toDouble()
     }
 }

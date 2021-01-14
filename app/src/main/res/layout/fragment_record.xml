@@ -36,7 +36,7 @@
     <TextView
         android:id="@+id/tvDistanceLabel"
         style="@style/CommonTextViewStyle"
-        android:text="Distance" />
+        android:text="@string/tv_distance_label" />
 
     <TextView
         android:padding="20dp"
@@ -47,7 +47,7 @@
     <TextView
         android:id="@+id/tvAvgSpeedLabel"
         style="@style/CommonTextViewStyle"
-        android:text="AVG Speed" />
+        android:text="@string/tv_speed_label" />
 
     <TextView
         android:padding="20dp"
@@ -58,7 +58,7 @@
     <TextView
         android:id="@+id/tvTimeLabel"
         style="@style/CommonTextViewStyle"
-        android:text="Time" />
+        android:text="@string/tv_time_label" />
 
     <TextView
         android:padding="20dp"

@@ -4,9 +4,7 @@ import android.annotation.SuppressLint
 import android.app.*
 import android.content.Intent
 import android.os.*
-import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.navigation.NavDeepLinkBuilder
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
 import com.dungle.getlocationsample.model.LocationData
@@ -148,7 +146,7 @@ class LocationTrackerService : Service() {
         locationRequest = LocationRequest.create()
         locationRequest.interval = Constant.REQUEST_INTERVAL
         locationRequest.fastestInterval = Constant.FASTEST_REQUEST_INTERVAL
-        locationRequest.smallestDisplacement = Constant.SMALLEST_DISPLACEMENT
+//        locationRequest.smallestDisplacement = Constant.SMALLEST_DISPLACEMENT
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
     }
 

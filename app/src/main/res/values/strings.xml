@@ -7,4 +7,7 @@
     <string name="txt_app_running_in_background">Your session is tracking</string>
     <string name="txt_distance">%s km</string>
     <string name="txt_speed">%s km/h</string>
+    <string name="tv_speed_label">Speed</string>
+    <string name="tv_distance_label">Distance</string>
+    <string name="tv_time_label">Time</string>
 </resources>

@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,12 +30,12 @@ import com.google.android.gms.maps.GoogleMap.SnapshotReadyCallback
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.maps.android.SphericalUtil
 import kotlinx.android.synthetic.main.fragment_record.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.io.ByteArrayOutputStream
-
 
 open class RecordFragment : Fragment() {
     private val viewModel: SessionViewModel by sharedViewModel()
@@ -289,22 +290,24 @@ open class RecordFragment : Fragment() {
         currentLocation: LocationData?
     ) {
         if (currentLocation != null) {
-            currentInProgressSession?.distance =
-                Util.calculateDistance(
-                    startLocation.lat,
-                    startLocation.long,
-                    currentLocation.lat,
-                    currentLocation.long
+            val distance = SphericalUtil.computeDistanceBetween(
+                startLocation.toLatLng(),
+                currentLocation.toLatLng()
+            ) / 1000
+
+            val newDistance = startLocation.distanceToInKm(
+                    currentLocation.toLatLng()
                 )
-            currentInProgressSession?.displayAvgSpeed =
-                Util.calculateSpeed(startLocation, currentLocation)
-            Util.showMessage(
-                requireContext(),
-                "speed: ${Util.calculateSpeed(startLocation, currentLocation)}"
-            )
-            currentInProgressSession?.speeds?.add(
-                Util.calculateSpeed(startLocation, currentLocation)
-            )
+
+            currentInProgressSession?.distance = newDistance
+//            Log.e("juju", "distance: $distance")
+//            Log.e("juju", "rounded distance: ${Util.round(distance)}")
+            val speed = Util.calculateSpeed(startLocation, currentLocation)
+            currentInProgressSession?.displayAvgSpeed = speed
+            currentInProgressSession?.speeds?.add(speed)
+            Log.e("juju", "speed: $speed")
+            Log.e("juju", "rounded speed: ${Util.round(speed)}")
+            Util.showMessage(requireContext(), "distance $distance - newDistance ${newDistance} - speeds $speed")
         } else {
             currentInProgressSession?.distance = 0.0
             currentInProgressSession?.speeds?.add(0.0)
@@ -313,25 +316,15 @@ open class RecordFragment : Fragment() {
 
     private fun updateUI() {
         if (currentInProgressSession != null) {
-            tvDistance?.text = if (currentInProgressSession?.distance!! > 0.0) {
-                getString(
-                    R.string.txt_distance,
-                    Util.round(currentInProgressSession?.distance!!).toString()
-                )
-            } else {
-                getString(R.string.txt_distance, "0.0")
+            tvDistance?.text = getString(
+                R.string.txt_distance,
+                Util.round(currentInProgressSession?.distance!!).toString()
+            )
 
-            }
-
-            tvAvgSpeed?.text =
-                if (currentInProgressSession?.displayAvgSpeed!! > 0.0) {
-                    getString(
-                        R.string.txt_speed,
-                        Util.round(currentInProgressSession?.displayAvgSpeed!!).toString()
-                    )
-                } else {
-                    getString(R.string.txt_speed, "0.0")
-                }
+            tvAvgSpeed?.text = getString(
+                R.string.txt_speed,
+                Util.round(currentInProgressSession?.displayAvgSpeed!!).toString()
+            )
 
             tvTime?.text = currentInProgressSession?.displayDuration
         }
