@@ -1,7 +1,6 @@
 package com.dungle.getlocationsample.ui.viewmodel
 
 import android.content.Context
-import android.graphics.Bitmap
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -21,8 +20,9 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
-import kotlinx.coroutines.*
-import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 class SessionViewModel(
     private val sessionRepository: SessionRepository
@@ -54,7 +54,6 @@ class SessionViewModel(
         get() = _trackingState
 
     var googleMap: GoogleMap? = null
-    var context: Context? = null
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
     private var isCameraMoved = false
@@ -134,41 +133,43 @@ class SessionViewModel(
         googleMap.setOnCameraMoveListener {
             isCameraMoved = true
         }
-        context?.let { getGoogleMap(null, it) }
     }
 
-
-    private fun getMarker(latLng: LatLng, title: String, markerLayout: Int) = googleMap?.addMarker(
-        MarkerOptions()
-            .position(latLng).title(title)
-            .icon(BitmapDescriptorFactory.fromBitmap(context?.let {
-                Util.createStartLocationMarker(
-                    it, markerLayout
-                )
-            }))
-    )
-
-    fun onDrawPathWithPoint(points: List<LatLng>) {
-        val polyLineOptions = PolylineOptions()
-        context?.let {
-            polyLineOptions.addAll(points)
-                .width(
-                    DeviceDimensionsHelper.convertDpToPixelFloat(
-                        10f,
-                        it
+    private fun getMarker(context: Context, latLng: LatLng, title: String, markerLayout: Int) =
+        googleMap?.addMarker(
+            MarkerOptions()
+                .position(latLng).title(title)
+                .icon(
+                    BitmapDescriptorFactory.fromBitmap(
+                        Util.createStartLocationMarker(
+                            context,
+                            markerLayout
+                        )
                     )
                 )
-                .color(ContextCompat.getColor(it, R.color.orange))
-        }
+        )
+
+    fun onDrawPathWithPoint(context: Context, points: List<LatLng>) {
+        val polyLineOptions = PolylineOptions()
+        polyLineOptions.addAll(points)
+            .width(
+                DeviceDimensionsHelper.convertDpToPixelFloat(
+                    10f,
+                    context
+                )
+            )
+            .color(ContextCompat.getColor(context, R.color.orange))
         googleMap?.addPolyline(polyLineOptions)
     }
 
     fun addMarker(
+        context: Context,
         startLocation: LatLng,
         currentLocationLatLng: LatLng?
     ) {
         if (startMarker == null) {
             startMarker = getMarker(
+                context,
                 startLocation,
                 "Start position",
                 R.layout.layout_start_marker
@@ -178,6 +179,7 @@ class SessionViewModel(
         currentLocationLatLng?.let {
             if (endMarker == null) {
                 endMarker = getMarker(
+                    context,
                     it,
                     "Current position",
                     R.layout.layout_end_marker
@@ -188,7 +190,7 @@ class SessionViewModel(
         }
     }
 
-    fun boundMapWithListLatLng(listLatLng: List<LatLng>) {
+    fun boundMapWithListLatLng(context: Context, listLatLng: List<LatLng>) {
         if (isCameraMoved.not()) {
             val boundBuilder = LatLngBounds.Builder()
             for (latLng in listLatLng) {
@@ -198,12 +200,10 @@ class SessionViewModel(
             val latLngBounds = boundBuilder.build()
             googleMap?.setOnMapLoadedCallback {
                 googleMap?.animateCamera(
-                    context?.let { DeviceDimensionsHelper.convertDpToPixel(60f, it) }?.let {
-                        CameraUpdateFactory.newLatLngBounds(
-                            latLngBounds,
-                            it
-                        )
-                    }, 400, null
+                    CameraUpdateFactory.newLatLngBounds(
+                        latLngBounds,
+                        DeviceDimensionsHelper.convertDpToPixel(60f, context)
+                    ), 400, null
                 )
             }
         }

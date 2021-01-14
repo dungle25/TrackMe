@@ -17,7 +17,7 @@ import com.dungle.getlocationsample.util.LocationUpdateUtils
 import com.dungle.getlocationsample.util.Util
 import com.google.android.gms.maps.GoogleMap.SnapshotReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.android.synthetic.main.fragment_record.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -199,15 +199,23 @@ class RecordFragment : Fragment() {
                     val currentLocationLatLng =
                         LatLng(currentLocation.latitude, currentLocation.longitude)
                     setLocationInfoToObject(startLocation, currentLocation)
-                    viewModel.addMarker(startLocationLatLng, currentLocationLatLng)
+                    context?.let { context ->
+                        viewModel.addMarker(context, startLocationLatLng, currentLocationLatLng)
+
+                    }
                 } else {
                     setLocationInfoToObject(startLocation, null)
-                    viewModel.addMarker(startLocationLatLng, null)
+                    context?.let { context ->
+                        viewModel.addMarker(context, startLocationLatLng, null)
+                    }
                 }
 
                 val latLngData = convertToLatLngList(it)
-                viewModel.onDrawPathWithPoint(latLngData)
-                viewModel.boundMapWithListLatLng(latLngData)
+                context?.let { context ->
+                    viewModel.onDrawPathWithPoint(context, latLngData)
+                    viewModel.boundMapWithListLatLng(context, latLngData)
+
+                }
             }
             updateUI()
         }
