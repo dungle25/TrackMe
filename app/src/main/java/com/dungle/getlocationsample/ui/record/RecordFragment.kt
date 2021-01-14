@@ -405,9 +405,7 @@ open class RecordFragment : Fragment() {
         val latLngBounds = boundBuilder.build()
         googleMap?.setOnMapLoadedCallback {
             googleMap?.animateCamera(
-                CameraUpdateFactory.newLatLngBounds(latLngBounds, 25, 25, 5),
-                800,
-                null
+                CameraUpdateFactory.newLatLngBounds(latLngBounds, 15)
             )
         }
     }
