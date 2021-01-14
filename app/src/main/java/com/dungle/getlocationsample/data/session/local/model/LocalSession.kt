@@ -8,18 +8,17 @@ import com.dungle.getlocationsample.model.Session
 
 @Entity(tableName = "session_table")
 data class LocalSession(
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id") val id: Int = 0,
     @ColumnInfo(name = "locations") val locations: MutableList<Location> = arrayListOf(),
     @ColumnInfo(name = "averageSpeed") val speeds: MutableList<Double> = arrayListOf(),
     @ColumnInfo(name = "distance") val distance: Double = 0.0,
-    @ColumnInfo(name = "time") val displayDuration: String = "",
+    @ColumnInfo(name = "time") val displayDuration: String = "00:00:00",
     @ColumnInfo(typeAffinity = ColumnInfo.BLOB) var mapSnapshot: ByteArray? = null
 
 ) {
     fun toSession(): Session {
         return Session(
-            id = id,
             locations = locations,
             speeds = speeds,
             distance = distance,

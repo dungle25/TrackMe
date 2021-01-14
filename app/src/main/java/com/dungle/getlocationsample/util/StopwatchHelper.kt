@@ -53,8 +53,9 @@ class StopwatchHelper {
         }
 
         override fun toString(): String {
-            return (getElapsedTimeHour().toString() + ":" + getElapsedTimeMin() + ":"
-                    + getElapsedTimeSecs())
+            val format = "%1$02d"
+            return (String.format(format, getElapsedTimeHour()) + ":" + String.format(format, getElapsedTimeMin()) + ":"
+                    + String.format(format, getElapsedTimeSecs()))
         }
     }
 }

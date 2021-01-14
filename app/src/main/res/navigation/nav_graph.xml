@@ -23,5 +23,10 @@
         <action
             android:id="@+id/action_recordFragment_to_historyFragment"
             app:destination="@id/historyFragment" />
+
+        <argument
+            android:name="isStartTracking"
+            app:argType="boolean"
+            android:defaultValue="false"/>
     </fragment>
 </navigation>
