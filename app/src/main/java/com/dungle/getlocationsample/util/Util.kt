@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import com.dungle.getlocationsample.Status
+import com.dungle.getlocationsample.model.LocationData
 import kotlin.math.*
 
 class Util {
@@ -96,12 +97,12 @@ class Util {
         }
 
         fun calculateSpeed(
-            startLocation: Location,
-            currentLocation: Location
+            startLocation: LocationData,
+            currentLocation: LocationData
         ): Double {
             return sqrt(
-                (currentLocation.longitude - startLocation.longitude).pow(2)
-                        + (currentLocation.latitude - startLocation.latitude).pow(2)
+                (currentLocation.long - startLocation.long).pow(2)
+                        + (currentLocation.lat - startLocation.lat).pow(2)
             ) / (currentLocation.time - startLocation.time)
         }
 

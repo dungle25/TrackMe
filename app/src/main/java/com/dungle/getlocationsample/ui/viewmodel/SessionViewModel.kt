@@ -1,17 +1,17 @@
 package com.dungle.getlocationsample.ui.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dungle.getlocationsample.TrackingStatus
 import com.dungle.getlocationsample.data.session.repo.SessionRepository
 import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.model.wrapper.DataExceptionHandler
 import com.dungle.getlocationsample.model.wrapper.DataResult
 import com.dungle.getlocationsample.model.wrapper.VolatileLiveData
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 class SessionViewModel(
     private val sessionRepository: SessionRepository
@@ -37,8 +37,8 @@ class SessionViewModel(
         get() = _isNeedReloadSessionList
 
     // Session tracking statuses
-    private var _trackingState: MutableLiveData<TrackingStatus> = MutableLiveData()
-    val trackingState: LiveData<TrackingStatus>
+    private var _trackingState: MutableLiveData<String> = MutableLiveData()
+    val trackingState: LiveData<String>
         get() = _trackingState
 
     fun getAllSessionHistory() {
@@ -47,9 +47,7 @@ class SessionViewModel(
             _sessionHistoryData.postValue(DataResult.loading(null))
             try {
                 coroutineScope {
-                    val sessions = withContext(Dispatchers.IO) {
-                        sessionRepository.getAllSession()
-                    }
+                    val sessions = sessionRepository.getAllSession()
                     _sessionHistoryData.postValue(DataResult.success(sessions))
                 }
             } catch (e: Exception) {
@@ -66,7 +64,7 @@ class SessionViewModel(
         _databaseSaveSessionState.value = DataResult.success(false)
     }
 
-    fun setTrackingStatus(status: TrackingStatus) {
+    fun setTrackingStatus(status: String) {
         _trackingState.value = status
     }
 
@@ -76,15 +74,14 @@ class SessionViewModel(
             try {
 
                 coroutineScope {
-//                    val state = withContext(Dispatchers.IO) {
+                    val state = sessionRepository.saveSession(session)
+
+
+//                    val task = async {
 //                        sessionRepository.saveSession(session)
 //                    }
-
-                    val task = async {
-                        sessionRepository.saveSession(session)
-                    }
-                    _databaseSaveSessionState.postValue(DataResult.success(task.await() > -1L))
-//                    _databaseSaveSessionState.postValue(DataResult.success(state != -1L))
+//                    _databaseSaveSessionState.postValue(DataResult.success(task.await() > -1L))
+                    _databaseSaveSessionState.postValue(DataResult.success(state != -1L))
                 }
             } catch (e: Exception) {
                 _databaseSaveSessionState.postValue(DataExceptionHandler().handleException(e))

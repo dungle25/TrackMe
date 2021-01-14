@@ -7,48 +7,73 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.preference.PreferenceManager
-import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
+import com.dungle.getlocationsample.TrackingStatus
 import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.service.LocationTrackerService
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import pub.devrel.easypermissions.EasyPermissions
+import java.lang.reflect.Type
 
 class LocationUpdateUtils {
     companion object {
-        private const val KEY_SESSION_ID = "KEY_SESSION_ID"
+        private const val KEY_SESSION_STATUS = "KEY_SESSION_STATUS"
+        private const val KEY_CURRENT_SESSION = "KEY_CURRENT_SESSION"
         private const val KEY_REQUESTING_LOCATION_UPDATES = "KEY_REQUESTING_LOCATION_UPDATES"
 
         fun isRequestingLocationUpdates(context: Context): Boolean {
-            //TODO replace with Datastore
             return PreferenceManager.getDefaultSharedPreferences(context)
                 .getBoolean(KEY_REQUESTING_LOCATION_UPDATES, false)
         }
 
         fun requestLocationUpdates(context: Context, isRequestingLocationUpdates: Boolean) {
-            //TODO replace with Datastore
             PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
                 .putBoolean(KEY_REQUESTING_LOCATION_UPDATES, isRequestingLocationUpdates)
                 .apply()
         }
 
-        fun getCurrentRequestingSessionId(context: Context): Int {
-            //TODO replace with Datastore
-            return PreferenceManager.getDefaultSharedPreferences(context)
-                .getInt(KEY_SESSION_ID, -1)
+        fun getCurrentSession(context: Context): Session? {
+            val json = PreferenceManager.getDefaultSharedPreferences(context)
+                .getString(KEY_CURRENT_SESSION, "")
+            val type: Type = object : TypeToken<Session>() {}.type
+            return Gson().fromJson(json, type)
         }
 
-        fun pauseTrackingService(context: Context?) {
+        private fun setCurrentSession(context: Context, session: Session) {
+
+            PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putString(KEY_CURRENT_SESSION, Gson().toJson(session))
+                .apply()
+        }
+
+        fun getCurrentTrackingStatus(context: Context): String? {
+            return PreferenceManager.getDefaultSharedPreferences(context)
+                .getString(KEY_SESSION_STATUS, "")
+        }
+
+        fun setCurrentTrackingStatus(context: Context, trackingStatus: String) {
+            PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putString(KEY_SESSION_STATUS, trackingStatus)
+                .apply()
+        }
+
+        fun pauseTrackingService(context: Context?, currentInProgressSession: Session) {
             context?.let {
+                setCurrentTrackingStatus(it, TrackingStatus.PAUSED)
+                setCurrentSession(it, currentInProgressSession)
                 requestLocationUpdates(it, false)
-                it.stopService(Intent(it, LocationTrackerService::class.java))
             }
         }
 
         fun stopTrackingLocationService(context: Context?) {
             if (context != null) {
+                setCurrentTrackingStatus(context, TrackingStatus.STOPPED)
                 requestLocationUpdates(context, false)
                 context.stopService(Intent(context, LocationTrackerService::class.java))
             }
@@ -89,6 +114,7 @@ class LocationUpdateUtils {
 
         private fun checkFineLocationThenStartTracking(context: Activity, session : Session) {
             if (EasyPermissions.hasPermissions(context, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                setCurrentTrackingStatus(context, TrackingStatus.TRACKING)
                 requestLocationUpdates(context, true)
                 val intent = Intent(context, LocationTrackerService::class.java)
                 val bundle = Bundle()

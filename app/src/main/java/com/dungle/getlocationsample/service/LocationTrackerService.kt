@@ -6,15 +6,13 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
-import android.os.Build
-import android.os.Handler
-import android.os.IBinder
-import android.os.Looper
+import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.navigation.NavDeepLinkBuilder
 import com.dungle.getlocationsample.Constant
 import com.dungle.getlocationsample.R
+import com.dungle.getlocationsample.model.LocationData
 import com.dungle.getlocationsample.model.Session
 import com.dungle.getlocationsample.ui.main.MainActivity
 import com.dungle.getlocationsample.util.StopwatchHelper
@@ -29,16 +27,17 @@ class LocationTrackerService : Service() {
     private var session: Session? = null
     private var handler = Handler(Looper.getMainLooper())
     private lateinit var locationRequest: LocationRequest
+    private val localBinder = LocalBinder()
     private val locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult?) {
             super.onLocationResult(locationResult)
             locationResult?.lastLocation?.let {
-                session?.locations?.add(it)
+                session?.locations?.add(LocationData(it.latitude, it.longitude, it.time))
             }
         }
     }
 
-    private var runnable: Runnable = object : Runnable {
+    private var runnable = object : Runnable {
         override fun run() {
             session?.displayDuration = StopwatchHelper.toString()
             session?.duration = StopwatchHelper.currentTime - StopwatchHelper.startTime
@@ -49,11 +48,10 @@ class LocationTrackerService : Service() {
         }
     }
 
-
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
-    override fun onBind(intent: Intent): IBinder? {
-        return null
+    override fun onBind(intent: Intent): IBinder {
+        return localBinder
     }
 
     @SuppressLint("VisibleForTests")
@@ -88,6 +86,14 @@ class LocationTrackerService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
+        StopwatchHelper.stop()
+        session?.startTime = StopwatchHelper.startTime
+        session?.endTime = StopwatchHelper.currentTime
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    fun pauseTracking() {
+        handler.removeCallbacksAndMessages(null)
         StopwatchHelper.pause()
         session?.startTime = StopwatchHelper.startTime
         session?.endTime = StopwatchHelper.currentTime
@@ -95,7 +101,7 @@ class LocationTrackerService : Service() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun startLocationUpdates() {
+    fun startLocationUpdates() {
         fusedLocationClient.requestLocationUpdates(
             locationRequest,
             locationCallback,
@@ -145,5 +151,9 @@ class LocationTrackerService : Service() {
         locationRequest.fastestInterval = Constant.FASTEST_REQUEST_INTERVAL
         locationRequest.smallestDisplacement = Constant.SMALLEST_DISPLACEMENT
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+    }
+
+    inner class LocalBinder : Binder() {
+        fun getService(): LocationTrackerService = this@LocationTrackerService
     }
 }

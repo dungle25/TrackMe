@@ -6,9 +6,9 @@ class Constant {
         const val REQUEST_INTERVAL = 1000L
         const val FASTEST_REQUEST_INTERVAL = 500L
         /*
-         * Minimum distance to update
+         * Minimum distance to update in meters
          */
-        const val SMALLEST_DISPLACEMENT = 5.0F
+        const val SMALLEST_DISPLACEMENT = 3.0F
 
         // Notification channel ID
         const val CHANNEL_ID_FOREGROUND_NOTIFICATION = "while_in_use_channel_01"

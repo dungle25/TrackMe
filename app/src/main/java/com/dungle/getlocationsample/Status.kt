@@ -6,6 +6,11 @@ enum class Status {
     LOADING
 }
 
-enum class TrackingStatus {
-    TRACKING, PAUSED, STOPPED, RESUME
+class TrackingStatus {
+    companion object {
+        const val TRACKING = "TRACKING"
+        const val PAUSED = "PAUSED"
+        const val STOPPED = "STOPPED"
+        const val RESUME = "RESUME"
+    }
 }

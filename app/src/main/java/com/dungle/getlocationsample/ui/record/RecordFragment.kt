@@ -1,8 +1,12 @@
 package com.dungle.getlocationsample.ui.record
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.Bitmap
-import android.location.Location
 import android.os.Bundle
+import android.os.IBinder
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,7 +16,9 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.dungle.getlocationsample.R
 import com.dungle.getlocationsample.TrackingStatus
+import com.dungle.getlocationsample.model.LocationData
 import com.dungle.getlocationsample.model.Session
+import com.dungle.getlocationsample.service.LocationTrackerService
 import com.dungle.getlocationsample.ui.viewmodel.SessionViewModel
 import com.dungle.getlocationsample.util.DeviceDimensionsHelper
 import com.dungle.getlocationsample.util.LocationUpdateUtils
@@ -29,7 +35,7 @@ import org.greenrobot.eventbus.Subscribe
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.io.ByteArrayOutputStream
 
-class RecordFragment : Fragment() {
+open class RecordFragment : Fragment() {
     private val viewModel: SessionViewModel by sharedViewModel()
     private var googleMap: GoogleMap? = null
     private var startMarker: Marker? = null
@@ -38,11 +44,32 @@ class RecordFragment : Fragment() {
     private var currentInProgressSession: Session? = null
     private var isStartNewTracking = false
 
+    // A reference to the service used to get location updates.
+    private var trackingService: LocationTrackerService? = null
+
+    // Tracks the bound state of the service.
+    private var isServiceBound = false
+
+    // Monitors the state of the connection to the service.
+    private val trackingServiceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder = service as LocationTrackerService.LocalBinder
+            trackingService = binder.getService()
+            isServiceBound = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            trackingService = null
+            isServiceBound = false
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        isStartNewTracking = arguments?.let { RecordFragmentArgs.fromBundle(it).isStartTracking } == true
+        isStartNewTracking =
+            arguments?.let { RecordFragmentArgs.fromBundle(it).isStartTracking } == true
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_record, container, false)
     }
@@ -58,15 +85,47 @@ class RecordFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         EventBus.getDefault().register(this)
+        bindLocationUpdateService()
         if (isStartNewTracking) {
             isStartNewTracking = false
             startTracking()
+        } else {
+            context?.let {
+                if (LocationUpdateUtils.getCurrentTrackingStatus(it) == TrackingStatus.PAUSED) {
+                    currentInProgressSession = LocationUpdateUtils.getCurrentSession(it)
+                    currentInProgressSession?.let { session ->
+                        onLocationUpdate(session)
+                    }
+                }
+            }
         }
     }
 
     override fun onStop() {
         super.onStop()
         EventBus.getDefault().unregister(this)
+        unbindLocationUpdateService()
+    }
+
+    protected open fun bindLocationUpdateService() {
+        // bind Service
+        context?.let {
+            it.bindService(
+                Intent(it, LocationTrackerService::class.java),
+                trackingServiceConnection,
+                Context.BIND_AUTO_CREATE
+            )
+        }
+    }
+
+    protected open fun unbindLocationUpdateService() {
+        // unbind Service
+        if (isServiceBound) {
+            context?.let {
+                it.unbindService(trackingServiceConnection)
+                isServiceBound = false
+            }
+        }
     }
 
     private fun observerDataChanged() {
@@ -83,13 +142,11 @@ class RecordFragment : Fragment() {
                     }
                     TrackingStatus.PAUSED -> {
                         showResumeAndStopButton()
-                        LocationUpdateUtils.pauseTrackingService(it)
+                        trackingService?.pauseTracking()
+                        LocationUpdateUtils.pauseTrackingService(it, currentInProgressSession!!)
                     }
                     TrackingStatus.RESUME -> {
-                        showPauseButton()
-                        if (currentInProgressSession != null) {
-                            viewModel.setCurrentSession(currentInProgressSession!!)
-                        }
+                        resumeTracking()
                     }
                     else -> {
                         stopTracking()
@@ -128,6 +185,13 @@ class RecordFragment : Fragment() {
                 { hideLoading() },
                 { showLoading() })
         })
+    }
+
+    private fun resumeTracking() {
+        showPauseButton()
+        if (currentInProgressSession != null) {
+            viewModel.setCurrentSession(currentInProgressSession!!)
+        }
     }
 
     private fun showError(message: String?) {
@@ -198,12 +262,12 @@ class RecordFragment : Fragment() {
         currentInProgressSession?.locations?.let {
             if (it.size > 0) {
                 val startLocation = it[0]
-                val startLocationLatLng = LatLng(startLocation.latitude, startLocation.longitude)
+                val startLocationLatLng = LatLng(startLocation.lat, startLocation.long)
 
                 if (it.size > 1) {
                     val currentLocation = it[it.size - 1]
                     val currentLocationLatLng =
-                        LatLng(currentLocation.latitude, currentLocation.longitude)
+                        LatLng(currentLocation.lat, currentLocation.long)
                     setLocationInfoToObject(startLocation, currentLocation)
                     addMarker(startLocationLatLng, currentLocationLatLng)
                 } else {
@@ -219,10 +283,12 @@ class RecordFragment : Fragment() {
         }
     }
 
-    private fun setLocationInfoToObject(startLocation: Location, currentLocation: Location?) {
+    private fun setLocationInfoToObject(startLocation: LocationData, currentLocation: LocationData?) {
         if (currentLocation != null) {
             currentInProgressSession?.distance =
-                Util.calculateDistanceInKm(startLocation, currentLocation).toDouble()
+                Util.calculateDistance(startLocation.lat, startLocation.long, currentLocation.lat, currentLocation.long)
+            currentInProgressSession?.displayAvgSpeed =
+                Util.calculateSpeed(startLocation, currentLocation)
             currentInProgressSession?.speeds?.add(
                 Util.calculateSpeed(startLocation, currentLocation)
             )
@@ -235,26 +301,33 @@ class RecordFragment : Fragment() {
     private fun updateUI() {
         if (currentInProgressSession != null) {
             tvDistance?.text = if (currentInProgressSession?.distance!! > 0.0) {
-                getString(R.string.txt_distance, Util.round(currentInProgressSession?.distance!!).toString())
+                getString(
+                    R.string.txt_distance,
+                    Util.round(currentInProgressSession?.distance!!).toString()
+                )
             } else {
                 getString(R.string.txt_distance, "0.0")
 
             }
 
-            tvAvgSpeed?.text = if (currentInProgressSession?.speeds != null && currentInProgressSession?.speeds!!.isNotEmpty()) {
-                getString(R.string.txt_speed, Util.round(currentInProgressSession?.speeds!!.average()).toString())
-            } else {
-                getString(R.string.txt_speed, "0.0")
-            }
+            tvAvgSpeed?.text =
+                if (currentInProgressSession?.displayAvgSpeed!! > 0.0) {
+                    getString(
+                        R.string.txt_speed,
+                        Util.round(currentInProgressSession?.displayAvgSpeed!!).toString()
+                    )
+                } else {
+                    getString(R.string.txt_speed, "0.0")
+                }
 
             tvTime?.text = currentInProgressSession?.displayDuration
         }
     }
 
-    private fun convertToLatLngList(locations: MutableList<Location>): List<LatLng> {
+    private fun convertToLatLngList(locations: MutableList<LocationData>): List<LatLng> {
         val latLngData: MutableList<LatLng> = arrayListOf()
         locations.forEach {
-            latLngData.add(LatLng(it.latitude, it.longitude))
+            latLngData.add(it.toLatLng())
         }
         return latLngData
     }
@@ -292,7 +365,7 @@ class RecordFragment : Fragment() {
         }
     }
 
-    private fun startTrackingLocation(currentSession : Session) {
+    private fun startTrackingLocation(currentSession: Session) {
         activity?.let {
             if (!LocationUpdateUtils.isRequestingLocationUpdates(it)) {
                 LocationUpdateUtils.startTrackingLocationService(it, currentSession)
@@ -313,9 +386,9 @@ class RecordFragment : Fragment() {
     private val snapShotCallback: SnapshotReadyCallback = object : SnapshotReadyCallback {
         var bitmap: Bitmap? = null
         override fun onSnapshotReady(snapshot: Bitmap) {
+            currentInProgressSession?.locations?.let { boundMapWithListLatLng(convertToLatLngList(it)) }
             bitmap = snapshot
             val bos = ByteArrayOutputStream()
-
             try {
                 context?.let {
                     bitmap!!.compress(Bitmap.CompressFormat.PNG, 60, bos)
@@ -324,7 +397,6 @@ class RecordFragment : Fragment() {
             } catch (e: Exception) {
                 throw e
             }
-
             currentInProgressSession?.mapSnapshot = bos.toByteArray()
             saveToLocal()
         }
@@ -392,24 +464,24 @@ class RecordFragment : Fragment() {
     }
 
     private fun boundMapWithListLatLng(listLatLng: List<LatLng>) {
-        if (isCameraMoved.not()) {
-            val boundBuilder = LatLngBounds.Builder()
-            for (latLng in listLatLng) {
-                boundBuilder.include(latLng)
-            }
-
-            val latLngBounds = boundBuilder.build()
-            googleMap?.setOnMapLoadedCallback {
-                googleMap?.animateCamera(
-                    context?.let { DeviceDimensionsHelper.convertDpToPixel(60f, it) }?.let {
-                        CameraUpdateFactory.newLatLngBounds(
-                            latLngBounds,
-                            it
-                        )
-                    }, 400, null
-                )
-            }
+//        if (isCameraMoved.not()) {
+        val boundBuilder = LatLngBounds.Builder()
+        for (latLng in listLatLng) {
+            boundBuilder.include(latLng)
         }
+
+        val latLngBounds = boundBuilder.build()
+        googleMap?.setOnMapLoadedCallback {
+            googleMap?.animateCamera(
+                context?.let { DeviceDimensionsHelper.convertDpToPixel(60f, it) }?.let {
+                    CameraUpdateFactory.newLatLngBounds(
+                        latLngBounds,
+                        it
+                    )
+                }, 400, null
+            )
+        }
+//        }
     }
 
     private fun snapShotMap() {

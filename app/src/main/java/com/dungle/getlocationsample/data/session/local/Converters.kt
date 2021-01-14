@@ -1,20 +1,20 @@
 package com.dungle.getlocationsample.data.session.local
 
-import android.location.Location
 import androidx.room.TypeConverter
+import com.dungle.getlocationsample.model.LocationData
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 
 class Converters {
     @TypeConverter
-    fun locationListToString(locations: List<Location>): String {
+    fun locationListToString(locations: List<LocationData>): String {
         return Gson().toJson(locations)
     }
 
     @TypeConverter
-    fun stringLocationList(data: String): List<Location> {
-        val listType: Type = object : TypeToken<List<Location>>() {}.type
+    fun stringLocationList(data: String): List<LocationData> {
+        val listType: Type = object : TypeToken<List<LocationData>>() {}.type
         return Gson().fromJson(data, listType)
     }
 

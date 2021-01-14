@@ -4,13 +4,14 @@ import android.location.Location
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.dungle.getlocationsample.model.LocationData
 import com.dungle.getlocationsample.model.Session
 
 @Entity(tableName = "session_table")
 data class LocalSession(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id") val id: Int = 0,
-    @ColumnInfo(name = "locations") val locations: MutableList<Location> = arrayListOf(),
+    @ColumnInfo(name = "locations") val locations: MutableList<LocationData> = arrayListOf(),
     @ColumnInfo(name = "averageSpeed") val speeds: MutableList<Double> = arrayListOf(),
     @ColumnInfo(name = "distance") val distance: Double = 0.0,
     @ColumnInfo(name = "time") val displayDuration: String = "00:00:00",
