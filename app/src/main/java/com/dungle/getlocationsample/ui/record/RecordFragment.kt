@@ -7,7 +7,6 @@ import android.content.ServiceConnection
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -35,6 +34,7 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.io.ByteArrayOutputStream
+
 
 open class RecordFragment : Fragment() {
     private val viewModel: SessionViewModel by sharedViewModel()
@@ -462,7 +462,7 @@ open class RecordFragment : Fragment() {
     }
 
     private fun boundMapWithListLatLng(listLatLng: List<LatLng>) {
-//        if (isCameraMoved.not()) {
+
         val boundBuilder = LatLngBounds.Builder()
         for (latLng in listLatLng) {
             boundBuilder.include(latLng)
@@ -471,15 +471,11 @@ open class RecordFragment : Fragment() {
         val latLngBounds = boundBuilder.build()
         googleMap?.setOnMapLoadedCallback {
             googleMap?.animateCamera(
-                context?.let { DeviceDimensionsHelper.convertDpToPixel(60f, it) }?.let {
-                    CameraUpdateFactory.newLatLngBounds(
-                        latLngBounds,
-                        it
-                    )
-                }, 400, null
+                CameraUpdateFactory.newLatLngBounds(latLngBounds, 25, 25, 5),
+                800,
+                null
             )
         }
-//        }
     }
 
     private fun snapShotMap() {
