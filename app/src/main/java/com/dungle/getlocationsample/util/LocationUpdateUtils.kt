@@ -24,12 +24,12 @@ class LocationUpdateUtils {
         private const val KEY_CURRENT_SESSION = "KEY_CURRENT_SESSION"
         private const val KEY_REQUESTING_LOCATION_UPDATES = "KEY_REQUESTING_LOCATION_UPDATES"
 
-        fun isRequestingLocationUpdates(context: Context): Boolean {
+        fun isTrackingServiceRunning(context: Context): Boolean {
             return PreferenceManager.getDefaultSharedPreferences(context)
                 .getBoolean(KEY_REQUESTING_LOCATION_UPDATES, false)
         }
 
-        fun requestLocationUpdates(context: Context, isRequestingLocationUpdates: Boolean) {
+        fun setTrackingServiceRunning(context: Context, isRequestingLocationUpdates: Boolean) {
             PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
                 .putBoolean(KEY_REQUESTING_LOCATION_UPDATES, isRequestingLocationUpdates)
@@ -43,8 +43,7 @@ class LocationUpdateUtils {
             return Gson().fromJson(json, type)
         }
 
-        private fun setCurrentSession(context: Context, session: Session) {
-
+        private fun setCurrentSession(context: Context, session: Session?) {
             PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
                 .putString(KEY_CURRENT_SESSION, Gson().toJson(session))
@@ -67,14 +66,15 @@ class LocationUpdateUtils {
             context?.let {
                 setCurrentTrackingStatus(it, TrackingStatus.PAUSED)
                 setCurrentSession(it, currentInProgressSession)
-                requestLocationUpdates(it, false)
+                setTrackingServiceRunning(context, false)
             }
         }
 
         fun stopTrackingLocationService(context: Context?) {
             if (context != null) {
+                setCurrentSession(context, null)
                 setCurrentTrackingStatus(context, TrackingStatus.STOPPED)
-                requestLocationUpdates(context, false)
+                setTrackingServiceRunning(context, false)
                 context.stopService(Intent(context, LocationTrackerService::class.java))
             }
         }
@@ -115,7 +115,7 @@ class LocationUpdateUtils {
         private fun checkFineLocationThenStartTracking(context: Activity, session : Session) {
             if (EasyPermissions.hasPermissions(context, Manifest.permission.ACCESS_FINE_LOCATION)) {
                 setCurrentTrackingStatus(context, TrackingStatus.TRACKING)
-                requestLocationUpdates(context, true)
+                setTrackingServiceRunning(context, true)
                 val intent = Intent(context, LocationTrackerService::class.java)
                 val bundle = Bundle()
                 bundle.putParcelable(Constant.CURRENT_SESSION, session)

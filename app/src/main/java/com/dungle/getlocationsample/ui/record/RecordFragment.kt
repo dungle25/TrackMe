@@ -90,6 +90,7 @@ open class RecordFragment : Fragment() {
             }
             currentInProgressSession?.mapSnapshot = bos.toByteArray()
             saveToLocal()
+            currentInProgressSession = null
         }
     }
 
@@ -282,8 +283,8 @@ open class RecordFragment : Fragment() {
 
     private fun stopTracking() {
         stopTrackingLocationService()
-        showPauseButton()
         snapShotMap()
+        showPauseButton()
     }
 
     private fun setLocationInfoToSessionModel(
@@ -328,16 +329,13 @@ open class RecordFragment : Fragment() {
 
     private fun stopTrackingLocationService() {
         context?.let {
-            if (LocationUpdateUtils.isRequestingLocationUpdates(it)) {
-                currentInProgressSession = null
-                LocationUpdateUtils.stopTrackingLocationService(it)
-            }
+            LocationUpdateUtils.stopTrackingLocationService(it)
         }
     }
 
     private fun startTrackingLocationService(currentSession: Session) {
         activity?.let {
-            if (!LocationUpdateUtils.isRequestingLocationUpdates(it)) {
+            if (!LocationUpdateUtils.isTrackingServiceRunning(it)) {
                 LocationUpdateUtils.startTrackingLocationService(it, currentSession)
             }
         }

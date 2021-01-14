@@ -60,7 +60,7 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     override fun onResume() {
         super.onResume()
         context?.let {
-            LocationUpdateUtils.requestLocationUpdates(it, false)
+            LocationUpdateUtils.setTrackingServiceRunning(it, false)
         }
     }
 
