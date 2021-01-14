@@ -7,17 +7,21 @@
 
     <fragment
         android:id="@+id/historyFragment"
-        android:name="com.dungle.getlocationsample.ui.history.HistoryFragment"
+        android:name="com.dungle.trackme.ui.history.HistoryFragment"
         android:label="fragment_history"
         tools:layout="@layout/history_fragment">
         <action
             android:id="@+id/action_historyFragment_to_recordFragment"
-            app:destination="@id/recordFragment" />
+            app:destination="@id/recordFragment"
+            app:enterAnim="@anim/enter_from_right"
+            app:exitAnim="@anim/exit_to_left"
+            app:popEnterAnim="@anim/enter_from_left"
+            app:popExitAnim="@anim/exit_to_right" />
     </fragment>
 
     <fragment
         android:id="@+id/recordFragment"
-        android:name="com.dungle.getlocationsample.ui.record.RecordFragment"
+        android:name="com.dungle.trackme.ui.record.RecordFragment"
         android:label="fragment_record"
         tools:layout="@layout/fragment_record">
         <action
@@ -26,7 +30,7 @@
 
         <argument
             android:name="isStartTracking"
-            app:argType="boolean"
-            android:defaultValue="false"/>
+            android:defaultValue="false"
+            app:argType="boolean" />
     </fragment>
 </navigation>

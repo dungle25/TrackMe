@@ -20,9 +20,9 @@
         android:id="@+id/flow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="20dp"
         android:orientation="horizontal"
-        app:constraint_referenced_ids="tvDistance, tvAvgSpeed, tvTime"
+        android:padding="20dp"
+        app:constraint_referenced_ids="tvDistance, vFirstDivider, tvAvgSpeed,vSecondDivider, tvTime"
         app:flow_wrapMode="aligned"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/ivMap" />
@@ -31,9 +31,21 @@
         android:id="@+id/tvDistance"
         style="@style/CommonTextViewStyle" />
 
+    <View
+        android:id="@+id/vFirstDivider"
+        android:layout_width="1dp"
+        android:layout_height="17dp"
+        android:background="@color/black" />
+
     <TextView
         android:id="@+id/tvAvgSpeed"
         style="@style/CommonTextViewStyle" />
+
+    <View
+        android:id="@+id/vSecondDivider"
+        android:layout_width="1dp"
+        android:layout_height="17dp"
+        android:background="@color/black" />
 
     <TextView
         android:id="@+id/tvTime"
