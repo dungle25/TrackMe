@@ -12,7 +12,11 @@
         tools:layout="@layout/history_fragment">
         <action
             android:id="@+id/action_historyFragment_to_recordFragment"
-            app:destination="@id/recordFragment" />
+            app:destination="@id/recordFragment"
+            app:enterAnim="@anim/enter_from_right"
+            app:exitAnim="@anim/exit_to_left"
+            app:popEnterAnim="@anim/enter_from_left"
+            app:popExitAnim="@anim/exit_to_right" />
     </fragment>
 
     <fragment
@@ -26,7 +30,7 @@
 
         <argument
             android:name="isStartTracking"
-            app:argType="boolean"
-            android:defaultValue="false"/>
+            android:defaultValue="false"
+            app:argType="boolean" />
     </fragment>
 </navigation>
