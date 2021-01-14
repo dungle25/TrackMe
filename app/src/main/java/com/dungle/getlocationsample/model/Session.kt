@@ -34,7 +34,8 @@ data class Session(
 data class LocationData(
     var lat: Double = 0.0,
     var long: Double = 0.0,
-    var time: Long = 0L
+    var time: Long = 0L,
+    var speed: Double
 ) : Parcelable {
     fun toLatLng(): LatLng {
         return LatLng(lat, long)

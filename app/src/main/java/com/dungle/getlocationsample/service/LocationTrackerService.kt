@@ -27,7 +27,7 @@ class LocationTrackerService : Service() {
         override fun onLocationResult(locationResult: LocationResult?) {
             super.onLocationResult(locationResult)
             locationResult?.lastLocation?.let {
-                session?.locations?.add(LocationData(it.latitude, it.longitude, it.time))
+                session?.locations?.add(LocationData(it.latitude, it.longitude, it.time, it.speed * 3.6))
             }
         }
     }

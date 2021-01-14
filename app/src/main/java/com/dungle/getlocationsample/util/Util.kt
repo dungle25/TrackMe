@@ -4,17 +4,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.location.Location
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import com.dungle.getlocationsample.Status
-import com.dungle.getlocationsample.model.LocationData
-import java.text.DecimalFormat
-import java.util.*
-import kotlin.math.*
 
 class Util {
     companion object {
@@ -77,48 +71,12 @@ class Util {
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
 
-        fun calculateDistance(
-            lat1: Double,
-            lng1: Double,
-            lat2: Double,
-            lng2: Double
-        ): Double {
-            val dLat = Math.toRadians(lat2 - lat1)
-            val dLon = Math.toRadians(lng2 - lng1)
-            val a = (sin(dLat / 2) * sin(dLat / 2)
-                    + (cos(Math.toRadians(lat1))
-                    * cos(Math.toRadians(lat2)) * sin(dLon / 2)
-                    * sin(dLon / 2)))
-            return 2 * asin(sqrt(a))
-        }
-
-        fun calculateDistanceInKm(
-            startLocation: Location,
-            currentLocation: Location
-        ): Float {
-            return startLocation.distanceTo(currentLocation) / 1000
-        }
-
-        fun calculateSpeed(
-            startLocation: LocationData,
-            currentLocation: LocationData
-        ): Double {
-            val currentSpeed = sqrt(
-                (currentLocation.long - startLocation.long).pow(2)
-                        + (currentLocation.lat - startLocation.lat).pow(2)
-            ) / (currentLocation.time - startLocation.time)
-            return currentSpeed * 3.6
-        }
-
-        fun round(value: Double?): Double {
-            val factor = 10.0.pow(5.toDouble()).toLong()
-            val newValue = if (value != null) {
-                value * factor
+        fun toStringAndRounded(value: Double?): String {
+            return if (value != null) {
+                String.format("%.2f", value)
             } else {
-                0.0
+                "0.0"
             }
-            val tmp = newValue.roundToInt()
-            return (tmp / factor).toDouble()
         }
     }
 }

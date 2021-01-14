@@ -7,7 +7,6 @@ import android.content.ServiceConnection
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,7 +29,6 @@ import com.google.android.gms.maps.GoogleMap.SnapshotReadyCallback
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
-import com.google.maps.android.SphericalUtil
 import kotlinx.android.synthetic.main.fragment_record.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -292,29 +290,13 @@ open class RecordFragment : Fragment() {
         currentLocation: LocationData?
     ) {
         if (currentLocation != null) {
-            val distance = SphericalUtil.computeDistanceBetween(
-                startLocation.toLatLng(),
-                currentLocation.toLatLng()
-            ) / 1000
-
-            val newDistance = startLocation.distanceToInKm(
-                currentLocation.toLatLng()
-            )
-
-            currentInProgressSession?.distance = newDistance
-//            Log.e("juju", "distance: $distance")
-//            Log.e("juju", "rounded distance: ${Util.round(distance)}")
-            val speed = Util.calculateSpeed(startLocation, currentLocation)
+            currentInProgressSession?.distance = startLocation.distanceToInKm(currentLocation.toLatLng())
+            val speed = currentLocation.speed
             currentInProgressSession?.displayAvgSpeed = speed
             currentInProgressSession?.speeds?.add(speed)
-            Log.e("juju", "speed: $speed")
-            Log.e("juju", "rounded speed: ${Util.round(speed)}")
-            Util.showMessage(
-                requireContext(),
-                "distance $distance - newDistance ${newDistance} - speeds $speed"
-            )
         } else {
             currentInProgressSession?.distance = 0.0
+            currentInProgressSession?.displayAvgSpeed = 0.0
             currentInProgressSession?.speeds?.add(0.0)
         }
     }
@@ -444,12 +426,12 @@ open class RecordFragment : Fragment() {
         if (currentInProgressSession != null) {
             tvDistance?.text = getString(
                 R.string.txt_distance,
-                Util.round(currentInProgressSession?.distance!!).toString()
+                Util.toStringAndRounded(currentInProgressSession?.distance!!)
             )
 
             tvAvgSpeed?.text = getString(
                 R.string.txt_speed,
-                Util.round(currentInProgressSession?.displayAvgSpeed!!).toString()
+                Util.toStringAndRounded(currentInProgressSession?.displayAvgSpeed!!)
             )
 
             tvTime?.text = currentInProgressSession?.displayDuration

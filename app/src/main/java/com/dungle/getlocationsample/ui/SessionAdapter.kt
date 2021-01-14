@@ -38,14 +38,14 @@ class SessionAdapter(private val data: List<Session>) :
                     .into(ivMap)
             }
             tvDistance?.text = containerView.context.getString(
-                R.string.txt_distance, Util.round(
+                R.string.txt_distance, Util.toStringAndRounded(
                     session.distance
-                ).toString()
+                )
             )
             tvAvgSpeed?.text = containerView.context.getString(
-                R.string.txt_speed, Util.round(
+                R.string.txt_speed, Util.toStringAndRounded(
                     session.speeds.average()
-                ).toString()
+                )
             )
             tvTime?.text = session.displayDuration
         }
