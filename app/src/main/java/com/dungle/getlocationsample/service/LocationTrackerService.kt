@@ -1,10 +1,7 @@
 package com.dungle.getlocationsample.service
 
 import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
+import android.app.*
 import android.content.Intent
 import android.os.*
 import android.util.Log
@@ -121,11 +118,13 @@ class LocationTrackerService : Service() {
             manager.createNotificationChannel(serviceChannel)
         }
 
-        val pendingIntent = NavDeepLinkBuilder(this)
-            .setComponentName(MainActivity::class.java)
-            .setGraph(R.navigation.nav_graph)
-            .setDestination(R.id.recordFragment)
-            .createPendingIntent()
+        val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra(Constant.FROM_NOTIFICATION, true)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 100, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT
+        )
 
         val notificationPriority = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             NotificationManager.IMPORTANCE_HIGH

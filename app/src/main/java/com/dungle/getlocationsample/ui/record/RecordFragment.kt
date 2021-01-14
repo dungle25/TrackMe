@@ -14,10 +14,14 @@ import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.dungle.getlocationsample.R
 import com.dungle.getlocationsample.TrackingStatus
+import com.dungle.getlocationsample.data.session.work_manager.InsertSessionWorker
 import com.dungle.getlocationsample.model.LocationData
 import com.dungle.getlocationsample.model.Session
+import com.dungle.getlocationsample.model.wrapper.DataResult
 import com.dungle.getlocationsample.service.LocationTrackerService
 import com.dungle.getlocationsample.ui.viewmodel.SessionViewModel
 import com.dungle.getlocationsample.util.DeviceDimensionsHelper
@@ -283,10 +287,18 @@ open class RecordFragment : Fragment() {
         }
     }
 
-    private fun setLocationInfoToObject(startLocation: LocationData, currentLocation: LocationData?) {
+    private fun setLocationInfoToObject(
+        startLocation: LocationData,
+        currentLocation: LocationData?
+    ) {
         if (currentLocation != null) {
             currentInProgressSession?.distance =
-                Util.calculateDistance(startLocation.lat, startLocation.long, currentLocation.lat, currentLocation.long)
+                Util.calculateDistance(
+                    startLocation.lat,
+                    startLocation.long,
+                    currentLocation.lat,
+                    currentLocation.long
+                )
             currentInProgressSession?.displayAvgSpeed =
                 Util.calculateSpeed(startLocation, currentLocation)
             currentInProgressSession?.speeds?.add(
@@ -404,7 +416,12 @@ open class RecordFragment : Fragment() {
 
     private fun saveToLocal() {
         currentInProgressSession?.let {
-            viewModel.saveSession(it)
+            context?.let { context ->
+//                viewModel.saveSessionWithWorker(context, it)
+//                getInsertSessionWorkerState()
+                viewModel.saveSession(it)
+            }
+
         }
     }
 
@@ -471,5 +488,17 @@ open class RecordFragment : Fragment() {
 
     private fun snapShotMap() {
         googleMap?.snapshot(snapShotCallback)
+    }
+
+    private fun getInsertSessionWorkerState() {
+        context?.let {
+            WorkManager.getInstance(it)
+                .getWorkInfoByIdLiveData(InsertSessionWorker.workerUUID)
+                .observe(viewLifecycleOwner, { workInfo ->
+                    if (workInfo != null && workInfo.state == WorkInfo.State.SUCCEEDED) {
+                        viewModel.setSaveSessionState(DataResult.success(true))
+                    }
+                })
+        }
     }
 }

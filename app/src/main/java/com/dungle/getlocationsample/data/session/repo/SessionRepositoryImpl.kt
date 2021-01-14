@@ -2,6 +2,8 @@ package com.dungle.getlocationsample.data.session.repo
 
 import com.dungle.getlocationsample.data.session.source.SessionDataSource
 import com.dungle.getlocationsample.model.Session
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SessionRepositoryImpl(
     private val localSessionDataSource: SessionDataSource
@@ -19,6 +21,12 @@ class SessionRepositoryImpl(
     }
 
     override suspend fun saveSession(session: Session): Long {
-        return localSessionDataSource.saveSession(session)
+        return withContext(Dispatchers.IO) {
+            localSessionDataSource.saveSession(session)
+        }
+    }
+
+    override fun saveSessionWithWorker(session: Session) {
+         return localSessionDataSource.saveSessionWithWorker(session)
     }
 }

@@ -7,4 +7,5 @@ interface SessionRepository {
     suspend fun getAllSession() : List<Session>
     suspend fun getSessionById(id : Int) : Session
     suspend fun saveSession(session: Session) : Long
+    fun saveSessionWithWorker(session: Session)
 }

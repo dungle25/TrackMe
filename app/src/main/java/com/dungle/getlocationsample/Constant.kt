@@ -2,7 +2,9 @@ package com.dungle.getlocationsample
 
 class Constant {
     companion object {
+        const val KEY_INSERT_SESSION = "KEY_INSERT_SESSION"
         const val CURRENT_SESSION = "CURRENT_SESSION"
+        const val FROM_NOTIFICATION = "FROM_NOTIFICATION"
         const val REQUEST_INTERVAL = 1000L
         const val FASTEST_REQUEST_INTERVAL = 500L
         /*
