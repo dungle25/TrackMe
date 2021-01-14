@@ -1,6 +1,5 @@
 package com.dungle.getlocationsample.data.session.local.model
 
-import android.location.Location
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey

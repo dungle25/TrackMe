@@ -146,7 +146,7 @@ class LocationTrackerService : Service() {
         locationRequest = LocationRequest.create()
         locationRequest.interval = Constant.REQUEST_INTERVAL
         locationRequest.fastestInterval = Constant.FASTEST_REQUEST_INTERVAL
-//        locationRequest.smallestDisplacement = Constant.SMALLEST_DISPLACEMENT
+        locationRequest.smallestDisplacement = Constant.SMALLEST_DISPLACEMENT
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
     }
 
