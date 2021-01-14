@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/historyFragment"
-        android:name="com.dungle.getlocationsample.ui.history.HistoryFragment"
+        android:name="com.dungle.trackme.ui.history.HistoryFragment"
         android:label="fragment_history"
         tools:layout="@layout/history_fragment">
         <action
@@ -21,7 +21,7 @@
 
     <fragment
         android:id="@+id/recordFragment"
-        android:name="com.dungle.getlocationsample.ui.record.RecordFragment"
+        android:name="com.dungle.trackme.ui.record.RecordFragment"
         android:label="fragment_record"
         tools:layout="@layout/fragment_record">
         <action
