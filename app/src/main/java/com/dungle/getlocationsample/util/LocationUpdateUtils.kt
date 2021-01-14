@@ -56,7 +56,7 @@ class LocationUpdateUtils {
                 .getString(KEY_SESSION_STATUS, "")
         }
 
-        fun setCurrentTrackingStatus(context: Context, trackingStatus: String) {
+        private fun setCurrentTrackingStatus(context: Context, trackingStatus: String) {
             PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
                 .putString(KEY_SESSION_STATUS, trackingStatus)

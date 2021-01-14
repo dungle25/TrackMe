@@ -66,6 +66,33 @@ open class RecordFragment : Fragment() {
         }
     }
 
+    private val callback = OnMapReadyCallback { googleMap ->
+        this.googleMap = googleMap
+        googleMap.setOnCameraMoveListener {
+            isCameraMoved = true
+        }
+        getGoogleMap()
+    }
+
+    private val snapShotCallback: SnapshotReadyCallback = object : SnapshotReadyCallback {
+        var bitmap: Bitmap? = null
+        override fun onSnapshotReady(snapshot: Bitmap) {
+            currentInProgressSession?.locations?.let { boundMapWithListLatLng(convertToLatLngList(it)) }
+            bitmap = snapshot
+            val bos = ByteArrayOutputStream()
+            try {
+                context?.let {
+                    bitmap!!.compress(Bitmap.CompressFormat.PNG, 60, bos)
+                }
+
+            } catch (e: Exception) {
+                throw e
+            }
+            currentInProgressSession?.mapSnapshot = bos.toByteArray()
+            saveToLocal()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -109,6 +136,33 @@ open class RecordFragment : Fragment() {
         unbindLocationUpdateService()
     }
 
+    @Subscribe
+    fun onLocationUpdate(session: Session) {
+        currentInProgressSession = session
+        currentInProgressSession?.locations?.let {
+            if (it.size > 0) {
+                val startLocation = it[0]
+                val startLocationLatLng = LatLng(startLocation.lat, startLocation.long)
+
+                if (it.size > 1) {
+                    val currentLocation = it[it.size - 1]
+                    val currentLocationLatLng =
+                        LatLng(currentLocation.lat, currentLocation.long)
+                    setLocationInfoToSessionModel(startLocation, currentLocation)
+                    addMarker(startLocationLatLng, currentLocationLatLng)
+                } else {
+                    setLocationInfoToSessionModel(startLocation, null)
+                    addMarker(startLocationLatLng, null)
+                }
+
+                val latLngData = convertToLatLngList(it)
+                onDrawPathWithPoint(latLngData)
+                boundMapWithListLatLng(latLngData)
+            }
+            updateUI()
+        }
+    }
+
     protected open fun bindLocationUpdateService() {
         // bind Service
         context?.let {
@@ -127,6 +181,31 @@ open class RecordFragment : Fragment() {
                 it.unbindService(trackingServiceConnection)
                 isServiceBound = false
             }
+        }
+    }
+
+    private fun initBackPressEvent() {
+        val callback: OnBackPressedCallback =
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    findNavController().popBackStack()
+                    stopTrackingLocationService()
+                }
+            }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+    }
+
+    private fun initClickEvents() {
+        ivPause?.setOnClickListener {
+            viewModel.setTrackingStatus(TrackingStatus.PAUSED)
+        }
+
+        ivResume?.setOnClickListener {
+            viewModel.setTrackingStatus(TrackingStatus.RESUME)
+        }
+
+        ivStop?.setOnClickListener {
+            viewModel.setTrackingStatus(TrackingStatus.STOPPED)
         }
     }
 
@@ -180,13 +259,18 @@ open class RecordFragment : Fragment() {
                 {
                     dataResult.data?.let {
                         currentInProgressSession = it
-                        startTrackingLocation(it)
+                        startTrackingLocationService(it)
                     }
                 },
                 { showError(dataResult.message) },
                 { hideLoading() },
                 { showLoading() })
         })
+    }
+
+    private fun startTracking() {
+        showPauseButton()
+        viewModel.setTrackingStatus(TrackingStatus.TRACKING)
     }
 
     private fun resumeTracking() {
@@ -196,96 +280,13 @@ open class RecordFragment : Fragment() {
         }
     }
 
-    private fun showError(message: String?) {
-        context?.let {
-            Util.showMessage(it, message.toString())
-        }
-    }
-
-    private fun showLoading() {
-        progressLoading.visibility = View.VISIBLE
-    }
-
-    private fun hideLoading() {
-        progressLoading.visibility = View.GONE
-    }
-
-    private fun initBackPressEvent() {
-        val callback: OnBackPressedCallback =
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    findNavController().popBackStack()
-                    stopLocationUpdates()
-                }
-            }
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
-    }
-
-    private fun initClickEvents() {
-        ivPause?.setOnClickListener {
-            viewModel.setTrackingStatus(TrackingStatus.PAUSED)
-        }
-
-        ivResume?.setOnClickListener {
-            viewModel.setTrackingStatus(TrackingStatus.RESUME)
-        }
-
-        ivStop?.setOnClickListener {
-            viewModel.setTrackingStatus(TrackingStatus.STOPPED)
-        }
-    }
-
     private fun stopTracking() {
-        stopLocationUpdates()
+        stopTrackingLocationService()
         showPauseButton()
         snapShotMap()
     }
 
-    private fun startTracking() {
-        showPauseButton()
-        viewModel.setTrackingStatus(TrackingStatus.TRACKING)
-    }
-
-    private fun showPauseButton() {
-        ivPause?.visibility = View.VISIBLE
-        ivResume?.visibility = View.GONE
-        ivStop?.visibility = View.GONE
-    }
-
-    private fun showResumeAndStopButton() {
-        ivResume?.visibility = View.VISIBLE
-        ivStop?.visibility = View.VISIBLE
-        ivPause?.visibility = View.GONE
-    }
-
-    @Subscribe
-    fun onLocationUpdate(session: Session) {
-        currentInProgressSession = session
-        currentInProgressSession?.locations?.let {
-            if (it.size > 0) {
-                val startLocation = it[0]
-                val startLocationLatLng = LatLng(startLocation.lat, startLocation.long)
-
-                if (it.size > 1) {
-                    val currentLocation = it[it.size - 1]
-                    val currentLocationLatLng =
-                        LatLng(currentLocation.lat, currentLocation.long)
-                    setLocationInfoToObject(startLocation, currentLocation)
-                    addMarker(startLocationLatLng, currentLocationLatLng)
-                } else {
-                    setLocationInfoToObject(startLocation, null)
-                    addMarker(startLocationLatLng, null)
-                }
-
-                val latLngData = convertToLatLngList(it)
-                onDrawPathWithPoint(latLngData)
-                boundMapWithListLatLng(latLngData)
-            }
-            updateUI()
-        }
-    }
-
-    private fun setLocationInfoToObject(
+    private fun setLocationInfoToSessionModel(
         startLocation: LocationData,
         currentLocation: LocationData?
     ) {
@@ -296,8 +297,8 @@ open class RecordFragment : Fragment() {
             ) / 1000
 
             val newDistance = startLocation.distanceToInKm(
-                    currentLocation.toLatLng()
-                )
+                currentLocation.toLatLng()
+            )
 
             currentInProgressSession?.distance = newDistance
 //            Log.e("juju", "distance: $distance")
@@ -307,26 +308,13 @@ open class RecordFragment : Fragment() {
             currentInProgressSession?.speeds?.add(speed)
             Log.e("juju", "speed: $speed")
             Log.e("juju", "rounded speed: ${Util.round(speed)}")
-            Util.showMessage(requireContext(), "distance $distance - newDistance ${newDistance} - speeds $speed")
+            Util.showMessage(
+                requireContext(),
+                "distance $distance - newDistance ${newDistance} - speeds $speed"
+            )
         } else {
             currentInProgressSession?.distance = 0.0
             currentInProgressSession?.speeds?.add(0.0)
-        }
-    }
-
-    private fun updateUI() {
-        if (currentInProgressSession != null) {
-            tvDistance?.text = getString(
-                R.string.txt_distance,
-                Util.round(currentInProgressSession?.distance!!).toString()
-            )
-
-            tvAvgSpeed?.text = getString(
-                R.string.txt_speed,
-                Util.round(currentInProgressSession?.displayAvgSpeed!!).toString()
-            )
-
-            tvTime?.text = currentInProgressSession?.displayDuration
         }
     }
 
@@ -338,31 +326,7 @@ open class RecordFragment : Fragment() {
         return latLngData
     }
 
-    private val callback = OnMapReadyCallback { googleMap ->
-        this.googleMap = googleMap
-        googleMap.setOnCameraMoveListener {
-            isCameraMoved = true
-        }
-        getGoogleMap()
-    }
-
-    private fun getGoogleMap() {
-        if (googleMap == null) {
-            val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
-            mapFragment?.getMapAsync(callback)
-        } else {
-            googleMap?.uiSettings?.isZoomControlsEnabled = true
-            googleMap?.uiSettings?.isRotateGesturesEnabled = true
-            googleMap?.setMapStyle(
-                MapStyleOptions.loadRawResourceStyle(
-                    activity,
-                    R.raw.style_map
-                )
-            )
-        }
-    }
-
-    private fun stopLocationUpdates() {
+    private fun stopTrackingLocationService() {
         context?.let {
             if (LocationUpdateUtils.isRequestingLocationUpdates(it)) {
                 currentInProgressSession = null
@@ -371,7 +335,7 @@ open class RecordFragment : Fragment() {
         }
     }
 
-    private fun startTrackingLocation(currentSession: Session) {
+    private fun startTrackingLocationService(currentSession: Session) {
         activity?.let {
             if (!LocationUpdateUtils.isRequestingLocationUpdates(it)) {
                 LocationUpdateUtils.startTrackingLocationService(it, currentSession)
@@ -389,28 +353,25 @@ open class RecordFragment : Fragment() {
             }))
     )
 
-    private val snapShotCallback: SnapshotReadyCallback = object : SnapshotReadyCallback {
-        var bitmap: Bitmap? = null
-        override fun onSnapshotReady(snapshot: Bitmap) {
-            currentInProgressSession?.locations?.let { boundMapWithListLatLng(convertToLatLngList(it)) }
-            bitmap = snapshot
-            val bos = ByteArrayOutputStream()
-            try {
-                context?.let {
-                    bitmap!!.compress(Bitmap.CompressFormat.PNG, 60, bos)
-                }
-
-            } catch (e: Exception) {
-                throw e
-            }
-            currentInProgressSession?.mapSnapshot = bos.toByteArray()
-            saveToLocal()
-        }
-    }
-
     private fun saveToLocal() {
         currentInProgressSession?.let {
             viewModel.saveSession(it)
+        }
+    }
+
+    private fun getGoogleMap() {
+        if (googleMap == null) {
+            val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
+            mapFragment?.getMapAsync(callback)
+        } else {
+            googleMap?.uiSettings?.isZoomControlsEnabled = true
+            googleMap?.uiSettings?.isRotateGesturesEnabled = true
+            googleMap?.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    activity,
+                    R.raw.style_map
+                )
+            )
         }
     }
 
@@ -473,5 +434,47 @@ open class RecordFragment : Fragment() {
 
     private fun snapShotMap() {
         googleMap?.snapshot(snapShotCallback)
+    }
+
+    private fun showError(message: String?) {
+        context?.let {
+            Util.showMessage(it, message.toString())
+        }
+    }
+
+    private fun updateUI() {
+        if (currentInProgressSession != null) {
+            tvDistance?.text = getString(
+                R.string.txt_distance,
+                Util.round(currentInProgressSession?.distance!!).toString()
+            )
+
+            tvAvgSpeed?.text = getString(
+                R.string.txt_speed,
+                Util.round(currentInProgressSession?.displayAvgSpeed!!).toString()
+            )
+
+            tvTime?.text = currentInProgressSession?.displayDuration
+        }
+    }
+
+    private fun showPauseButton() {
+        ivPause?.visibility = View.VISIBLE
+        ivResume?.visibility = View.GONE
+        ivStop?.visibility = View.GONE
+    }
+
+    private fun showResumeAndStopButton() {
+        ivResume?.visibility = View.VISIBLE
+        ivStop?.visibility = View.VISIBLE
+        ivPause?.visibility = View.GONE
+    }
+
+    private fun showLoading() {
+        progressLoading.visibility = View.VISIBLE
+    }
+
+    private fun hideLoading() {
+        progressLoading.visibility = View.GONE
     }
 }
