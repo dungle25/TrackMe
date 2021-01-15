@@ -215,12 +215,12 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
         builder.setMessage(getString(R.string.txt_turn_on_Gps))
             .setCancelable(false)
             .setPositiveButton(
-                "Yes"
+                getString(R.string.txt_yes)
             ) { _, _ ->
                 startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
             .setNegativeButton(
-                "No"
+                getString(R.string.txt_no)
             ) { dialog, _ -> dialog.cancel() }
         val alert: AlertDialog = builder.create()
         alert.show()

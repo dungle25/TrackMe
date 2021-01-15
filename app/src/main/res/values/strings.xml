@@ -11,4 +11,6 @@
     <string name="tv_distance_label">Distance</string>
     <string name="tv_time_label">Time</string>
     <string name="txt_turn_on_Gps">Your GPS seems to be disabled, do you want to enable it?</string>
+    <string name="txt_yes">Yes</string>
+    <string name="txt_no">No</string>
 </resources>
