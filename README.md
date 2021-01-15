@@ -18,6 +18,7 @@ Tools/ Libraries/ Patterns Used:
 * Eventbus (observer data)
 * Koin (dependency injection)
 * Navigation
+* Google Map, Google API
 ```
 
 ## Project structure
