@@ -1,8 +1,13 @@
 package com.dungle.trackme.ui.history
 
 import android.Manifest
+import android.app.AlertDialog
+import android.content.Context.LOCATION_SERVICE
+import android.content.Intent
+import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +24,7 @@ import com.dungle.trackme.util.Util
 import kotlinx.android.synthetic.main.history_fragment.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import pub.devrel.easypermissions.EasyPermissions
+
 
 class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     private val viewModel: SessionViewModel by sharedViewModel()
@@ -162,8 +168,6 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
 
     private fun checkPermissionAndGoToRecordScreen() {
         context?.let {
-            val action = HistoryFragmentDirections.actionHistoryFragmentToRecordFragment()
-            action.isStartTracking = true
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 if (EasyPermissions.hasPermissions(
                         it,
@@ -175,7 +179,7 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
                             Manifest.permission.ACCESS_BACKGROUND_LOCATION
                         )
                     ) {
-                        findNavController().navigate(action)
+                        isGPSEnable()
                     } else {
                         activity?.requestPermissions(
                             arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
@@ -192,8 +196,39 @@ class HistoryFragment : Fragment(), EasyPermissions.PermissionCallbacks {
                     )
                 }
             } else {
-                findNavController().navigate(action)
+                isGPSEnable()
             }
         }
+    }
+
+    private fun isGPSEnable() {
+        val manager = context?.getSystemService(LOCATION_SERVICE) as LocationManager?
+        if (!manager!!.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            buildAlertMessageNoGps()
+        } else {
+            goToRecord()
+        }
+    }
+
+    private fun buildAlertMessageNoGps() {
+        val builder: AlertDialog.Builder = AlertDialog.Builder(context)
+        builder.setMessage(getString(R.string.txt_turn_on_Gps))
+            .setCancelable(false)
+            .setPositiveButton(
+                "Yes"
+            ) { _, _ ->
+                startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            }
+            .setNegativeButton(
+                "No"
+            ) { dialog, _ -> dialog.cancel() }
+        val alert: AlertDialog = builder.create()
+        alert.show()
+    }
+
+    private fun goToRecord() {
+        val action = HistoryFragmentDirections.actionHistoryFragmentToRecordFragment()
+        action.isStartTracking = true
+        findNavController().navigate(action)
     }
 }
