@@ -196,6 +196,10 @@ open class RecordFragment : Fragment() {
 
     private fun initClickEvents() {
         ivPause?.setOnClickListener {
+            tvAvgSpeed?.text = getString(
+                R.string.txt_speed,
+                "0.0"
+            )
             viewModel.setTrackingStatus(TrackingStatus.PAUSED)
         }
 
