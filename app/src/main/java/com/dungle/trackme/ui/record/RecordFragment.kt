@@ -396,18 +396,15 @@ open class RecordFragment : Fragment() {
     }
 
     private fun boundMapWithListLatLng(listLatLng: List<LatLng>) {
-
         val boundBuilder = LatLngBounds.Builder()
         for (latLng in listLatLng) {
             boundBuilder.include(latLng)
         }
 
         val latLngBounds = boundBuilder.build()
-        googleMap?.setOnMapLoadedCallback {
-            googleMap?.animateCamera(
-                CameraUpdateFactory.newLatLngBounds(latLngBounds, 15)
-            )
-        }
+        googleMap?.animateCamera(
+            CameraUpdateFactory.newLatLngBounds(latLngBounds, 25)
+        )
     }
 
     private fun snapShotMap() {
